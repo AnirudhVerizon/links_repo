@@ -1,0 +1,108 @@
+public void updateModuleModel(BaseResponse baseResponse, boolean force) {
+        if (force && baseResponse instanceof LaunchAppModel) {
+            moduleModel = (ModuleModel) baseResponse.getBaseModuleModel();
+            updateLaunchModule( baseResponse, force);
+            return;
+        }
+        if (baseResponse != null && baseResponse.getBaseModuleModel() != null && baseResponse.getBaseModuleModel() instanceof ModuleModel && this.moduleModel == null) {
+            if (baseResponse instanceof LaunchAppModel) {
+                updateLaunchModule( baseResponse, force);
+            } else  if (baseResponse instanceof FirstTimeTermsAndConditionsModel) {
+                updateLaunchModule( baseResponse, force);
+            }else {
+                ModuleModel baseModuleModel = (ModuleModel) baseResponse.getBaseModuleModel();
+                if (baseModuleModel.getSignOutConfirm() != null) {
+                    confirmOperation = ((ModuleModel) baseResponse.getBaseModuleModel()).getSignOutConfirm();
+                }
+                if (baseModuleModel.getLeavingAppConfirm() != null) {
+                    leavingAppConfirm = ((ModuleModel) baseResponse.getBaseModuleModel()).getLeavingAppConfirm();
+                }
+            }
+        } else {
+            if(moduleModel!=null && baseResponse.getBaseModuleModel()!=null && baseResponse.getBaseModuleModel() instanceof ModuleModel){
+                moduleModel.updateData((ModuleModel) baseResponse.getBaseModuleModel());
+                updateLaunchModule( baseResponse, force);
+            }
+            showFabIcon();
+            updateSupportDrawer();
+        }
+
+    }
+
+    private void updateLaunchModule(BaseResponse baseResponse, boolean force) {
+        this.moduleModel = (ModuleModel) baseResponse.getBaseModuleModel();
+        //Removing fiosOnly logic
+        if (baseResponse.getPageModel().getTabAndNavModel() != null)  //it will be null in fiosOnly flow for accountLanding page where bridge call will update the navbar
+            navigationBarMoleculeModel = baseResponse.getPageModel().getTabAndNavModel().getNavigationBarMoleculeModel();
+        shouldShowToolbarAlways = true;
+        currentVisitedPage = baseResponse.getPageType();
+        loadPageData(this.moduleModel);
+        if (supportFABModel != null) {
+            showChatHeadIcon(supportFABModel);
+        } else {
+            hideChatHeadIcon();
+        }
+        setAppShortCut();
+        hideChatIcon();
+        setNightMode();
+        sendLaunchTaggingDataToAdobe();
+        setEcidToPreference();
+        setTpidToPreference();
+        getFiveGExpStatus();
+        if (getResources() != null) {
+            boolean isTablet = getResources().getBoolean(R.bool.isTablet);
+            CommonUtils.setIsTablet(isTablet);
+            if (isTablet && getResources().getConfiguration() != null) {
+                overlayHeight = (int) getResources().getDimension(R.dimen.notification_overlay_size);
+                CommonUtils.setCurrentOrientation(getResources().getConfiguration().orientation);
+                setUpTabletView(getResources().getConfiguration().orientation);
+            }
+        }
+        (new DeepLinkHandelingUtils(this, homePresenter)).checkForDeepLink(moduleModel.getDeepLinkMap(), moduleModel.getAppLinksModel(), null);
+        boolean isEnableInAppUpdate = SystemParamsUtil.getInstance().isEnableAndroidInAppUpdate();
+
+        //As remove splash is getting called multiple time so added this flag
+        if (!hasCheckedForUpdate && !currentVisitedPage.isBlank() && isEnableInAppUpdate) {
+            boolean updateType = SystemParamsUtil.getInstance().isInAppUpdateTypeImmediate();
+            int updateInterval = SystemParamsUtil.getInstance().inAppUpdateDaysInterval();
+
+            String linkName = (updateType) ? "mandatoryapp_update_overlay" : "flexiapp_update_overlay";
+
+            HashMap<String, Object> actionStrings = new HashMap<>();
+            actionStrings.put(Constants.LINK_NAME, linkName);
+            actionStrings.put(Constants.PAGE_TYPE_LINK_NAME, currentVisitedPage + Constants.PIPE + linkName);
+            actionStrings.put(Constants.SOURCE_CHANNEL, "mva");
+            actionStrings.put(Constants.DISPLAY_CHANNEL, "mva");
+            actionStrings.put(Constants.PAGE_TYPE_ADOBE, currentVisitedPage);
+            actionStrings.put(Constants.ADOBE_PAGE_NAME, currentVisitedPage);
+            analyticsUtil.trackAction(linkName, actionStrings);
+
+            if (inAppUpdateAlert == null) {
+                inAppUpdateAlert = moduleModel.getInAppUpdateAlert();
+            }
+            mManualAppUpdater.checkForAppUpdate(updateType, updateInterval);
+            hasCheckedForUpdate = true;
+        }
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(ErrorApiWorker.class).build();
+        WorkManager.getInstance(this).enqueue(request);
+    }
+
+    public void updateSupportDrawer() {
+        supportFABModel = MFAppContext.getInstance().getSupportFABModel();
+        if (supportFABModel != null && supportFABModel.getSupportFabLongPressModel() != null)
+            supportFABLongPressModel = MFAppContext.getInstance().getSupportFABModel().getSupportFabLongPressModel();
+        loadSupportFragment();
+        if (supportFABModel != null && supportFABModel.getState() != null) {
+            if (supportFABModel.getState().equalsIgnoreCase("variation_A")) {
+                SupportConstants.SUPPORT_FAB_VARIATION_TYPE = SupportConstants.SUPPORT_FAB_OPTION_A;
+            } else if (supportFABModel.getState().equalsIgnoreCase("variation_B")) {
+                SupportConstants.SUPPORT_FAB_VARIATION_TYPE = SupportConstants.SUPPORT_FAB_OPTION_B;
+            } else if (supportFABModel.getState().equalsIgnoreCase("variation_C")) {
+                SupportConstants.SUPPORT_FAB_VARIATION_TYPE = SupportConstants.SUPPORT_FAB_OPTION_C;
+            } else if (supportFABModel.getState().equalsIgnoreCase("variation_D")) {
+                SupportConstants.SUPPORT_FAB_VARIATION_TYPE = SupportConstants.SUPPORT_FAB_OPTION_D;
+            } else if (supportFABModel.getState().equalsIgnoreCase("fab_default")) {
+                SupportConstants.SUPPORT_FAB_VARIATION_TYPE = SupportConstants.SUPPORT_FAB_DEFAULT;
+            }
+        }
+    }
