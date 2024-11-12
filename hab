@@ -126,6 +126,32 @@ fun clearSearchFocus() {
         hab_content_view_root?.setBackgroundColor(Color.TRANSPARENT)
     }
 
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/hab_content_view_root"
+    android:orientation="horizontal">
+
+    <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+        android:id="@+id/iv_hab_back"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:layout_marginLeft="16dp"
+        android:visibility="gone"
+        android:src="@drawable/nav_back" />
+
+    <RelativeLayout
+        android:id="@+id/rootRl"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/view_margin_fifty_two_dp"
+        android:layout_marginHorizontal="@dimen/view_margin_sixteen_dp"
+        android:layout_marginTop="@dimen/view_margin_twenty_dp"
+        android:layout_marginBottom="@dimen/view_margin_sixteen_dp"
+        android:background="@drawable/background_hab_dark">
+
 
         <RelativeLayout
             android:id="@+id/searchArea"
@@ -181,3 +207,53 @@ fun clearSearchFocus() {
                 android:textColorHint="@color/white"
                 android:visibility="visible" />
         </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/dividerContainer"
+            android:layout_width="@dimen/view_height_one_dp"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_marginEnd="@dimen/view_margin_fifteen_dp"
+            android:layout_toStartOf="@+id/iv_assistant"
+            android:background="@color/transparent"
+            android:visibility="visible">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LineAtomView
+                android:id="@+id/divider"
+                android:layout_width="@dimen/view_height_one_dp"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:layout_marginVertical="1dp"
+                android:background="@color/transparent"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+            android:id="@+id/iv_assistant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@+id/iv_voice_input"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:src="@drawable/hab_assistant_white"
+            android:visibility="gone" />
+
+        <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+            android:id="@+id/iv_voice_input"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:src="@drawable/voice_icon" />
+
+
+    </RelativeLayout>
+</LinearLayout>
