@@ -1,0 +1,183 @@
+protected void resetHabSearchView() {
+        if (searchListPresenter != null) {
+            searchListPresenter.stopSearchRequest();
+        }
+        habContentMoleculeView.showFabIcon();
+//        habContentMoleculeView.clearText();
+        habContentMoleculeView.hideBackIcon();
+        if (searchOverlayView != null) {
+            searchOverlayView.removeAllViews();
+        }
+        searchListPresenter.hideKeyBoard(this);
+        if (habContentMoleculeView != null) {
+            habContentMoleculeView.clearSearchFocus();
+        }
+        hideSearchOverlay();
+
+
+        mToolbar.setVisibility(View.VISIBLE);
+    }
+
+
+    private void hideSearchOverlay() {
+        searchOverlayView.setVisibility(View.GONE);
+        searchListTemplateView.setVisibility(View.GONE);
+    }
+
+    private void showOverlay() {
+        mToolbar.setVisibility(View.GONE);
+        searchOverlayView.setVisibility(View.VISIBLE);
+    }
+
+    @Override
+    public void habSearchResults(@NonNull BaseResponse baseResponse) {
+        if (baseResponse instanceof GlobalSearchListTemplateModel) {
+            GlobalSearchListMoleculePageModel pagemodel = (GlobalSearchListMoleculePageModel) ((GlobalSearchListTemplateModel) baseResponse).getPageData();
+            searchListTemplateView.setOnListItemClickListener(delegateModel -> {
+                searchOverlayView.setVisibility(View.GONE);
+                searchListTemplateView.setVisibility(View.GONE);
+                habContentMoleculeView.hideBackIcon();
+                habContentMoleculeView.showFabIcon();
+                if (delegateModel.getActionModel() != null) {
+                    Action action = ActionModelConverter.Companion.convertToAction(delegateModel.getActionModel());
+                    if (action.getExtraParams() != null && action.getExtraParams().containsKey("browserUrl")) {
+                        Uri uri = Uri.parse(action.getExtraParams().get("browserUrl"));
+                        String query = uri.getQueryParameter("q");
+                        if (StringUtils.isNotEmpty(query)) {
+                            SearchUtil.Companion.saveRecentSearches(sharedPreferencesUtil, query);
+                        }
+                    }
+                    searchListPresenter.executeAction(action);
+                }
+            });
+            assert pagemodel != null;
+            if (pagemodel.getListTemplate() != null) {
+                searchListTemplateView.applyStyle(pagemodel.getListTemplate());
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                searchOverlayView.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    @Override
+    public void showOrHideOverlay(boolean show) {
+        runOnUiThread(() -> {
+            if (show) {
+                searchOverlayView.setVisibility(View.VISIBLE);
+                mToolbar.setVisibility(View.GONE);
+                searchListTemplateView.setVisibility(View.GONE);
+//                showRecentSearches();
+            } else {
+                searchOverlayView.setVisibility(View.GONE);
+                searchListPresenter.hideKeyBoard(this);
+                habContentMoleculeView.showFabIcon();
+                habContentMoleculeView.hideBackIcon();
+                mToolbar.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
+    public void hideSearchList(boolean hide) {
+        runOnUiThread(() -> {
+            if (hide) {
+                searchListTemplateView.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    @Override
+    public void onHabBackPressed() {
+        resetHabSearchView();
+    }
+
+    @Override
+    public void showVoiceInput() {
+//        SearchUtil.Companion.startSpeechRecognition(this,sharedPreferencesUtil);
+    }
+}
+
+
+fun clearSearchFocus() {
+//        searchResultsView?.apply {
+//            this.setText("")
+//        }
+        searchResultsView?.clearFocus()
+    }
+
+    fun showFabIcon(){
+        iv_voice_input?.visibility = View.GONE
+        iv_assistant?.visibility = View.VISIBLE
+    }
+
+    fun clearText(){
+        searchResultsView?.apply {
+            this.setText("")
+        }
+
+
+    }
+
+    fun hideBackIcon(){
+//        searchResultsView?.text = null
+
+        iv_hab_back?.visibility = View.GONE
+        isSearchActive = false
+        hab_content_view_root?.setBackgroundColor(Color.TRANSPARENT)
+    }
+
+
+        <RelativeLayout
+            android:id="@+id/searchArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/dividerContainer"
+            android:focusable="false"
+            android:focusableInTouchMode="false">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+                android:id="@+id/iv_search"
+                android:layout_width="@dimen/view_margin_twenty_six_dp"
+                android:layout_height="@dimen/view_margin_twenty_six_dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/hab_search_white" />
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LabelAtomView
+                android:id="@+id/et_search"
+                style="@style/LabelAtomStyle.RegularBodyLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionSearch"
+                android:text="How can we help?"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <com.vzw.mobilefirst.commons.views.components.SearchTextFieldView
+                android:id="@+id/searchResultsView"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:visibility="visible" />
+        </RelativeLayout>
