@@ -1,0 +1,24 @@
+
+Architecture
+Swiggy
+They write UI components in React native 
+Long running, background intensive, data storage components are written in Native (Android/iOS)
+
+verizon
+Very little client side UI written on native(atoms and molecules)
+Most of the screens are web pages
+
+Interesting Learnings
+No webview screens
+Does not focus on omnichannel experience(i.e customer journeys of users on app and web are different)
+Dynamically upscales or downscales images that are downloaded from the server based on mobile network strength(low,medium,high)
+
+Possible takeaways for our app
+ Uses AV1 Image Format (AVIF) for pictures in its app that are 60% smaller than PNG/JPEG
+Shift to more native/react native screens to increase zippyness
+
+Possible AI takeaways
+Hyper-localization and hyper-personalization of advertisements and search results
+
+
+
