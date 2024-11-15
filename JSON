@@ -1,0 +1,219 @@
+{
+  "ResponseInfo": {
+    "timeStamp": "882",
+    "correlationId": "7841e76d-620b-45b5-8741-9cab6fa8a930-16824125",
+    "errorCode": "00",
+    "errorMessage": "SUCCESS",
+    "message": "SUCCESS",
+    "type": "Success",
+    "code": "00",
+    "userMessage": "0",
+    "topAlertTime": 0
+  },
+  "Page": {
+    "template": "globalSearchList",
+    "analyticsData": {
+      "vzwi.mvmapp.flowType": "Search",
+      "vzwi.mvmapp.pageName": "/mf/more/contactus/findastore",
+      "vzwi.mvmapp.pageType": "globalSearchResult",
+      "vzwi.mvmapp.flowName": "discover"
+    },
+    "molecules": [
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 16",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 16",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16 Pro&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 16 Pro",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 16 Pro",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16 Pro Max&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 16 Pro Max",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 16 Pro Max",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 16 Plus&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 16 Plus",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 16 Plus",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 15&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 15",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 15",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=iPhone 15 Pro&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "iPhone 15 Pro",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "iPhone 15 Pro",
+        "hideArrow": true
+      },
+      {
+        "topPadding": 12,
+        "moleculeName": "listItem",
+        "line": {
+          "type": "none"
+        },
+        "action": {
+          "actionType": "openPage",
+          "pageType": "webview",
+          "appContext": "mobile/nsa/nos/gw/launchapp/l2",
+          "extraParameters": {
+            "browserUrl": "https://www.verizon.com/onesearch/search?q=Apple&lid=sayt&sayt=iph*&src=wireless",
+            "screenHeading": "Search"
+          }
+        },
+        "bottomPadding": 12,
+        "molecule": {
+          "moleculeName": "label",
+          "text": "Apple",
+          "fontStyle": "RegularBodyLarge"
+        },
+        "accessibilityText": "Apple",
+        "hideArrow": true
+      }
+    ],
+    "pageType": "globalSearch",
+    "tabBarHidden": false,
+    "cache": false
+  }
+}
