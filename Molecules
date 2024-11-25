@@ -1,0 +1,703 @@
+package com.vzw.hss.myverizon.atomic.views.atoms
+
+import android.content.Context
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.VectorDrawable
+import android.os.Build
+import android.text.*
+import android.text.style.ClickableSpan
+import android.text.util.Linkify
+import android.util.AttributeSet
+import android.util.Patterns
+import android.util.TypedValue
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewStructure
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityManager
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.appcompat.widget.AppCompatTextView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.view.AccessibilityDelegateCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.widget.TextViewCompat
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.target.Target
+import com.vzw.hss.myverizon.atomic.R
+import com.vzw.hss.myverizon.atomic.models.FontStyle
+import com.vzw.hss.myverizon.atomic.models.TextAlignment
+import com.vzw.hss.myverizon.atomic.models.atoms.AttributeStyleModel
+import com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel
+import com.vzw.hss.myverizon.atomic.utils.ImageUtils
+import com.vzw.hss.myverizon.atomic.utils.SpannableTextUtils
+import com.vzw.hss.myverizon.atomic.utils.Utils
+import com.vzw.hss.myverizon.atomic.utils.applyCommonStyles
+import com.vzw.hss.myverizon.atomic.views.StyleApplier
+import com.vzw.hss.myverizon.atomic.views.ViewHelper
+import com.vzw.hss.myverizon.atomic.views.architectureComponents.ClickLiveDataObject
+import org.apache.commons.lang3.StringUtils
+
+
+open class LabelAtomView : AppCompatTextView, StyleApplier<LabelAtomModel> {
+    internal var typeFace: Typeface? = null
+
+    constructor (mContext: Context) : super(mContext) {
+        parseAttribute(mContext, null, R.style.LabelAtomStyle_SubTitle)
+    }
+
+    constructor(mContext: Context, attribute: AttributeSet) : super(mContext, attribute) {
+        parseAttribute(mContext, attribute, R.style.LabelAtomStyle_SubTitle)
+    }
+
+    constructor(mContext: Context, attribute: AttributeSet, style: Int) : super(mContext, attribute, style) {
+        parseAttribute(mContext, attribute, style)
+    }
+
+    private fun parseAttribute(mContext: Context, attribute: AttributeSet?, style: Int) {
+        val attributeArray = intArrayOf(android.R.attr.fontFamily, android.R.attr.textColor, android.R.attr.textSize).apply { sort() }  //List of all attributes we need to set by default
+        val typedArray = mContext.obtainStyledAttributes(attribute, attributeArray)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            focusable = View.FOCUSABLE_AUTO
+        } else {
+            isFocusable = true
+        }
+
+        try {
+            //Else the XML will set the typeFace to widget internally else default is set here
+            typedArray.getString(attributeArray.indexOf(android.R.attr.fontFamily)) ?: run {
+                typeface = Utils.getFont(mContext, Utils.VERIZONNHGETX_REGULAR)
+            }
+
+            setTextColor(typedArray.getColor(attributeArray.indexOf(android.R.attr.textColor), ContextCompat.getColor(mContext, R.color.vds_color_palette_black)/*defValue*/))
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, typedArray.getDimension(attributeArray.indexOf(android.R.attr.textSize), resources.getDimension(R.dimen.font_size_small)))
+            Utils.disableAutofill(this)
+        } catch (e: Exception) {
+        } finally {
+            typedArray.recycle()
+        }
+    }
+
+    override fun onInitializeAccessibilityEvent(event: AccessibilityEvent) {
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_CLICKED, AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                if (this.text is SpannableString && this.linksClickable) {
+                    val links = (this.text as Spannable).getSpans(0, this.text.length, ClickableSpan::class.java) as Array<ClickableSpan>
+                    if (links.size > 0) {
+                        links[0].onClick(this)
+                    }
+                }
+                super.onInitializeAccessibilityEvent(event)
+            }
+            else -> super.onInitializeAccessibilityEvent(event)
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        var isHandled: Boolean? = false
+        val action = event.action
+        val accessibilityManager = context.getSystemService(
+            Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        if (accessibilityManager.isEnabled && (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_DOWN)) {
+            if (text is SpannableString) {
+                if (linksClickable) {
+                    val links = (text as Spannable).getSpans(0,
+                        text.length, ClickableSpan::class.java)
+
+                    if (links.size > 0 && action == MotionEvent.ACTION_UP) {
+                        links[0].onClick(this)
+                    }
+                }
+                isHandled = true
+            }
+        }
+        return isHandled!! || super.onTouchEvent(event)
+    }
+
+    fun setMFTypeface(typeFaceID: Int) {
+        if (typeFaceID == 0) {
+            return
+        }
+        this.typeFace = Utils.getFont(context, context?.getString(typeFaceID))
+    }
+
+    fun setMFTypefaceDyamically(fontName: String) {
+        typeFace = Utils.getFont(context, fontName)
+    }
+
+    /**
+     * @param text If non-empty & non-null, set this text to the textview and make the view View.VISIBLE.
+     * Otherwise, set the view to View.GONE.
+     */
+    fun setTextWithVisibility(text: String) {
+        if (StringUtils.isEmpty(text)) {
+            this.visibility = View.GONE
+        } else {
+            this.text = text
+            this.visibility = View.VISIBLE
+        }
+    }
+
+    override fun applyStyle(model: LabelAtomModel) {
+        applyCommonStyles(model)
+        visibility = model.visibility
+        if((model.numberOfLines ?: 0) > 0){
+            maxLines = model.numberOfLines!!
+            ellipsize = TextUtils.TruncateAt.END
+        }
+        if (!TextUtils.isEmpty(model.text)) {
+            text = model.text
+        } else if (!TextUtils.isEmpty(model.html)) {
+            text = Html.fromHtml(model.html)
+        } else {
+            visibility = View.GONE
+            return
+        }
+
+        if (model.hero == null) {
+            tag = -1
+        } else {
+            tag = model.hero
+        }
+
+        if (!TextUtils.isEmpty(model.fontStyle)) {
+//            println("fontstyle - ${model.fontStyle}")
+            typeface = Utils.getFontStyle(context, model.fontStyle)
+            when (model.fontStyle!!.toUpperCase()) {
+                FontStyle.H1.toString() -> {
+                    TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_H1)
+                    TextViewCompat.setLineHeight(this,context.resources.getDimensionPixelSize(R.dimen.view_height_forty_four_dp))
+                }
+                FontStyle.H2.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_H2)
+                FontStyle.H3.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_H3)
+                FontStyle.H32.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_H32)
+                FontStyle.B1.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_B1)
+                FontStyle.B2.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_B2)
+                FontStyle.B3.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_B3)
+                FontStyle.B20.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_B20)
+                FontStyle.TITLE2XLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_Title2XLarge)
+                FontStyle.BOLDTITLE2XLARGE.toString() ->{
+//                    println("here 2x large")
+                    TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldTitle2XLarge)}
+                FontStyle.REGULARTITLE2XLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularTitle2XLarge)
+                FontStyle.TITLEXLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_TitleXLarge)
+                FontStyle.BOLDTITLEXLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldTitleXLarge)
+                FontStyle.REGULARTITLEXLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularTitleXLarge)
+                FontStyle.BOLDTITLELARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldTitleLarge)
+                FontStyle.REGULARTITLELARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularTitleLarge)
+                FontStyle.BOLDTITLEMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldTitleMedium)
+                FontStyle.REGULARTITLEMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularTitleMedium)
+                FontStyle.BOLDTITLESMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldTitleSmall)
+                FontStyle.REGULARTITLESMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularTitleSmall)
+                FontStyle.BOLDBODYLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldBodyLarge)
+                FontStyle.REGULARBODYLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularBodyLarge)
+                FontStyle.BOLDBODYSMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldBodySmall)
+                FontStyle.BOLDBODYMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldBodyMedium)
+                FontStyle.REGULARBODYSMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularBodySmall)
+                FontStyle.BOLDMICRO.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldMicro)
+                FontStyle.REGULARMICRO.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularMicro)
+                FontStyle.BOLDFEATUREXLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldFeatureXLarge)
+                FontStyle.REGULARFEATUREXLARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularFeatureXSmall)
+                FontStyle.BOLDFEATURELARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldFeatureLarge)
+                FontStyle.REGULARFEATURELARGE.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularFeatureSmall)
+                FontStyle.BOLDFEATUREMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldFeatureMedium)
+                FontStyle.REGULARFEATUREMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularFeatureMedium)
+                FontStyle.BOLDFEATURESMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldFeatureSmall)
+                FontStyle.REGULARFEATURESMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularFeatureSmall)
+                FontStyle.BOLDFEATUREXSMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_BoldFeatureXSmall)
+                FontStyle.REGULARFEATUREXSMALL.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularFeatureXSmall)
+                FontStyle.REGULARBODYMEDIUM.toString() -> TextViewCompat.setTextAppearance(this, R.style.LabelAtomStyle_RegularBodyMedium)
+            }
+        } else {
+            if (model.fontSize != null) {
+                textSize = model.fontSize!!
+            }
+            if (!TextUtils.isEmpty(model.fontName)) {
+                typeface = Utils.getFont(context, model.fontName)
+            }
+        }
+        if (Utils.isValidColorCode(model.textColor)) {
+            setTextColor(Utils.getColor(context, model.textColor, ContextCompat.getColor(context, R.color.vds_color_palette_black)))
+        }
+
+        if (!TextUtils.isEmpty(model.accessibilityText) && model.accessibilityTraits.isNullOrEmpty()) {
+            contentDescription = model.accessibilityText
+        }
+        else if (!TextUtils.isEmpty(model.accessibilityText) && !model.accessibilityTraits.isNullOrEmpty()) {
+                contentDescription = model.accessibilityText + " " + model.accessibilityTraits?.joinToString(" ")
+        }
+        else if(TextUtils.isEmpty(model.accessibilityText) && !model.accessibilityTraits.isNullOrEmpty()){
+                contentDescription = model.text + " " + model.accessibilityTraits?.joinToString(" ")
+        }
+
+        if (!model.accessibilityTraits.isNullOrEmpty()) {
+            for (trait in model.accessibilityTraits!!) {
+                when (trait) {
+                    "header" -> { headingForAccessibility() }
+                    "link" -> { linkify() }
+                }
+            }
+        }
+
+        alignText(model)
+
+        if (model.attributeStyles != null && model.attributeStyles!!.isNotEmpty()) {
+            var spannableStringBuilder = SpannableStringBuilder(model.text!!)
+            loop@ for (style in model.attributeStyles!!) {
+                if (model.text == null || style.location == null || style.length == null ||
+                    (style.location!! + style.length!! > model.text!!.length && style.type != LabelAtomModel.TYPE_IMAGE)) {
+                    continue
+                }
+                val startIndex = style.location!!
+                val endIndex = style.location!! + style.length!!
+                when {
+                    style.type == LabelAtomModel.TYPE_STRIKE_THROUGH -> {
+                        spannableStringBuilder = SpannableTextUtils.strikeOffSubstringText(spannableStringBuilder, startIndex, endIndex)
+                    }
+                    style.type == LabelAtomModel.TYPE_UNDERLINE -> {
+                        spannableStringBuilder = SpannableTextUtils.underlineText(spannableStringBuilder, Color.parseColor(model.textColor
+                            ?: "#000000"), startIndex, endIndex)
+                    }
+                    style.type == LabelAtomModel.TYPE_COLOR -> {
+                        if (!Utils.isValidColorCode(style.textColor)) {
+                            continue@loop
+                        }
+                        spannableStringBuilder = SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex,
+                            Utils.getColor(context,style.textColor,ContextCompat.getColor(context,R.color.vds_color_palette_black)))
+                    }
+                    style.type == LabelAtomModel.TYPE_FONT -> {
+                        if (style.fontStyle != null) {
+                            val typeface = Utils.getFontStyle(context, style.fontStyle)
+                            spannableStringBuilder = SpannableTextUtils.changeSubstringTypeface(spannableStringBuilder, context!!, model.text!!, startIndex, endIndex, typeface)
+                            when (style.fontStyle!!.toUpperCase()) {
+                                FontStyle.H1.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_h1).toInt(), startIndex, endIndex)
+                                    TextViewCompat.setLineHeight(this,context.resources.getDimensionPixelSize(R.dimen.view_height_forty_four_dp))
+                                }
+                                FontStyle.H2.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_h2).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.H3.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_h3).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.H32.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_h32).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.B1.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_b1).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.B2.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_b2).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.B3.toString() -> {
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.battleshipGrey))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_b3).toInt(), startIndex, endIndex)
+
+                                }
+                                FontStyle.B20.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.font_size_b20).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.TITLE2XLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_2XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDTITLE2XLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_2XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARTITLE2XLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_2XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.TITLEXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDTITLEXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARTITLEXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDTITLELARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARTITLELARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDTITLEMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARTITLEMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDTITLESMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARTITLESMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_title_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDBODYLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARBODYLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDBODYSMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDBODYMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARBODYSMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDMICRO.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_micro_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARMICRO.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_micro_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDFEATUREXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARFEATUREXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.LIGHTFEATUREXLARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XLarge_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDFEATURELARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARFEATURELARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.LIGHTFEATURELARGE.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_large_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDFEATUREMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARFEATUREMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.LIGHTFEATUREMEDIUM.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDFEATURESMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARFEATURESMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.LIGHTFEATURESMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_small_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.BOLDFEATUREXSMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XSmall_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARFEATUREXSMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                        context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XSmall_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.LIGHTFEATUREXSMALL.toString() -> {
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_feature_XSmall_mobile).toInt(), startIndex, endIndex)
+                                }
+                                FontStyle.REGULARBODYMEDIUM.toString() ->{
+                                    SpannableTextUtils.changeSubstringColor(spannableStringBuilder, startIndex, endIndex, context!!.resources.getColor(R.color.vds_color_palette_black))
+                                    spannableStringBuilder = SpannableTextUtils.changeSubstringFontSizeDP(spannableStringBuilder,
+                                            context!!.resources.getDimension(R.dimen.vds_typography_fontsize_body_medium_mobile).toInt(), startIndex, endIndex)
+                                }
+                            }
+                        } else {
+                            if (style.name != null) {
+                                spannableStringBuilder = SpannableTextUtils.changeSubstringTypeface(spannableStringBuilder, context!!, model.text!!, startIndex, endIndex, style.name!!)
+                            }
+
+                            if (style.size != null) {
+                                spannableStringBuilder = SpannableTextUtils.changeSubstringFontSize(spannableStringBuilder, style.size!!, startIndex, endIndex)
+                            }
+                        }
+                    }
+                    style.type == LabelAtomModel.TYPE_ACTION -> {
+//                        val isInverted = model.inverted
+                        var defaultColor = Utils.getColor(context,style.textColor,ContextCompat.getColor(context,R.color.vds_color_elements_primary_onlight))
+                        var disabledColor = Utils.getColor(context,style.textColor,ContextCompat.getColor(context,R.color.vds_color_interactive_active_onlight))
+                        // Commented inverted colors for now as it is parsed now from base model.. once MR got merged will add these colors.
+//                        if (isInverted){
+//                            defaultColor = Utils.getColor(context,style.textColor,ContextCompat.getColor(context,R.color.vds_color_elements_primary_ondark))
+//                            disabledColor = Utils.getColor(context,style.textColor,ContextCompat.getColor(context,R.color.vds_color_interactive_disabled_ondark))
+//                        }
+
+                        val color = when {
+                            model.enabled -> {
+                                defaultColor
+                            }
+                            else -> {
+                                disabledColor
+                            }
+                        }
+                        spannableStringBuilder = SpannableTextUtils.makeSubstringClickable(spannableStringBuilder, this, startIndex, endIndex, color , object : SpannableTextUtils.ClickableLinkCallback {
+                            override fun onClick() {
+                                // Fire action only if link is enabled
+                                if (model.enabled) {
+                                    style.actionModel?.let {
+                                        ViewHelper.updateLiveData(context, ClickLiveDataObject(this@LabelAtomView, style.actionModel))
+                                    }
+                                }
+                            }
+                        })
+                    }
+
+                    style.type == LabelAtomModel.TYPE_IMAGE -> {
+                        var image: Bitmap? = null
+                        if (style.imageURL != null || style.name != null) {
+                            var imageName: String? = null
+                            style.imageURL?.let { imageName = it }
+                            if (imageName == null)
+                                imageName = style.name!!
+
+
+                            loadImage(imageName!!, style, spannableStringBuilder)
+                        } else {
+                            loadImage("atomic_imageload_error", style, spannableStringBuilder)
+                        }
+
+                    }
+                }
+            }
+            setText(spannableStringBuilder, BufferType.SPANNABLE)
+        }
+
+        if (model.importantForAccessibility) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                isFocusable = true
+                isScreenReaderFocusable = true
+            }
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+        }
+    }
+
+    /*For reader control header */
+    private fun headingForAccessibility() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            isAccessibilityHeading = true
+        } else {
+            ViewCompat.setAccessibilityDelegate(this, object : AccessibilityDelegateCompat() {
+                override fun onInitializeAccessibilityNodeInfo(
+                    host: View,
+                    info: AccessibilityNodeInfoCompat
+                ) {
+                    info.isHeading = true
+                    super.onInitializeAccessibilityNodeInfo(host, info)
+                }
+            })
+        }
+    }
+
+    /*For reader control Links */
+    private fun linkify() {
+        Linkify.addLinks(this, Linkify.ALL)
+    }
+
+    private fun loadImage(imageURL: String, style: AttributeStyleModel, spannableStringBuilder: SpannableStringBuilder) {
+        var spanStringBuilder: SpannableStringBuilder
+        if (Patterns.WEB_URL.matcher(imageURL).matches()) {
+            ImageUtils.loadBitmapFromWeb(context, imageURL, object : RequestListener<Bitmap> {
+                override fun onResourceReady(resource: Bitmap?, model: Any?, target: Target<Bitmap>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                    resource?.let {
+                        spanStringBuilder = setImage(style, it, spannableStringBuilder)
+                        setText(spanStringBuilder, BufferType.SPANNABLE)
+                    }
+                    return true
+                }
+
+                override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Bitmap>?, isFirstResource: Boolean): Boolean {
+                    val resource  = BitmapFactory.decodeResource( context.resources, R.drawable.atomic_imageload_error)
+                    spanStringBuilder = setImage(style, resource, spannableStringBuilder)
+                    setText(spanStringBuilder, BufferType.SPANNABLE)
+                    return false
+                }
+            })
+        } else {
+
+            when (val resourceId = context?.resources?.getIdentifier(imageURL, context?.getString(R.string.drawable), context!!.packageName)) {
+                ImageAtomViewUtil.RESOURCE_NOT_FOUND -> {
+                    spanStringBuilder = setImage(style, BitmapFactory.decodeResource( context.resources, R.drawable.atomic_imageload_error), spannableStringBuilder)
+                    setText(spanStringBuilder, BufferType.SPANNABLE)
+                }
+                else -> getBitmap(resourceId!!, style)?.let {
+                    spanStringBuilder = setImage(style, it, spannableStringBuilder)
+                    setText(spanStringBuilder, BufferType.SPANNABLE)
+                }
+            }
+        }
+    }
+
+    private  fun  getBitmap(resourceId: Int, style: AttributeStyleModel,): Bitmap? {
+        try {
+            when (AppCompatResources.getDrawable(context, resourceId)) {
+
+                is VectorDrawable -> {
+                    (AppCompatResources.getDrawable(context, resourceId) as? VectorDrawable)?.apply {
+
+                        if (style.tintColor != null && Utils.isValidColorCode(style.tintColor)) {
+                            val tintColor = Utils.getColor(context, style.tintColor, ContextCompat.getColor(context, R.color.vds_color_elements_primary_onlight))
+                            DrawableCompat.setTint(this, tintColor)
+                        }
+
+                        val canvas = Canvas()
+                        val bitmap = Bitmap.createBitmap(intrinsicWidth, intrinsicHeight, Bitmap.Config.ARGB_8888)
+                        canvas.setBitmap(bitmap)
+                        setBounds(0, 0, intrinsicWidth, intrinsicHeight)
+                        draw(canvas)
+                        return bitmap
+                    }
+                }
+                is BitmapDrawable -> {
+                    return BitmapFactory.decodeResource(context.resources, resourceId)
+                }
+            }
+        } catch (e: Exception) {
+            return BitmapFactory.decodeResource( context.resources, R.drawable.atomic_imageload_error)
+        }
+        return BitmapFactory.decodeResource( context.resources, R.drawable.atomic_imageload_error)
+    }
+
+
+    private fun setImage(style: AttributeStyleModel, resource: Bitmap, spannableStringBuilder: SpannableStringBuilder): SpannableStringBuilder {
+        val location = if (spannableStringBuilder.length + 1 <= style.location!!) spannableStringBuilder.length else style.location!!
+        val iconSize = if (style.size != null) Utils.convertDIPToPixels(context, (style.size)!!.toFloat()).toInt() else textSize.toInt()
+        val bm = Bitmap.createScaledBitmap(resource, iconSize, iconSize, false)
+        return SpannableTextUtils.imageSpan(context, spannableStringBuilder, location, bm)
+    }
+
+    private fun alignText(model: LabelAtomModel) {
+        if (model.textAlignment != TextAlignment.LEFT.toString())
+            gravity = when(model.textAlignment) {
+                TextAlignment.CENTER.toString() -> Gravity.CENTER_HORIZONTAL
+                TextAlignment.RIGHT.toString() -> Gravity.END
+                else -> Gravity.START
+            }
+    }
+
+
+    override fun onProvideStructure(structure: ViewStructure?) {
+        if (getText() == null) {
+            setText("")
+        }
+        super.onProvideStructure(structure)
+    }
+
+    override fun onProvideVirtualStructure(structure: ViewStructure?) {
+        if (getText() == null) {
+            setText("")
+        }
+        super.onProvideVirtualStructure(structure)
+    }
+
+    override fun onProvideAutofillStructure(structure: ViewStructure?, flags: Int) {
+        if (getText() == null) {
+            setText("")
+        }
+        super.onProvideAutofillStructure(structure, flags)
+    }
+
+    override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {
+        if (getText() == null) {
+            setText("")
+        }
+        super.onProvideAutofillVirtualStructure(structure, flags)
+    }
+
+/*    private fun startCountAnimation() {
+        val animator = ValueAnimator.ofInt(0, 600)
+        animator.duration = 5000
+        animator.addUpdateListener { animation ->setText(animation.animatedValue.toString()) }
+        animator.start()
+    }*/
+}
