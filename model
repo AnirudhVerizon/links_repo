@@ -1,0 +1,180 @@
+package com.vzw.hss.myverizon.atomic.models.atoms
+
+import android.os.Parcel
+import android.os.Parcelable
+import android.view.View
+import com.vzw.hss.myverizon.atomic.models.TextAlignment
+import com.vzw.hss.myverizon.atomic.models.base.BaseModel
+import org.apache.commons.lang3.builder.ToStringBuilder
+
+/**
+ * Model class for Label atom. It extends [BaseModel] to include common model fields.
+ * Views (Fragment/Activity) will use this model object to apply styles sent from server.
+ */
+
+open class LabelAtomModel : BaseModel {
+
+    var text: String? = null
+    var textColor: String? = null
+    var accessibilityText: String? = null
+    var fontName: String? = null
+    var fontSize: Float? = null
+    var html: String? = null
+    var attributeStyles: List<AttributeStyleModel>? = null
+    var fontStyle:String? = null
+    var textAlignment:String = TextAlignment.LEFT.toString()
+    var enabled:Boolean = true /*For link */
+    var disabledColor: String? = null/*For link */
+    var hero:Int? = null
+    var visibility: Int = View.VISIBLE
+    var linkType: String ?= null /* For Link */
+    var accessibilityTraits:List<String>? = null
+    var size: String = "large" /* For Link */
+    var importantForAccessibility: Boolean = false /* For accessibility importance */
+    var numberOfLines: Int? = null
+
+    constructor(parcel: Parcel) : super(parcel) {
+        text = parcel.readString()
+        textColor = parcel.readString()
+        accessibilityText = parcel.readString()
+        fontName = parcel.readString()
+        fontSize = parcel.readValue(Float::class.java.classLoader) as? Float
+        html = parcel.readString()
+        val leftList = mutableListOf<AttributeStyleModel>()
+        parcel.readList(leftList as List<*>, AttributeStyleModel::class.java.classLoader)
+        attributeStyles = leftList
+        fontStyle = parcel.readString()
+        textAlignment = parcel.readString()!!
+        enabled = parcel.readByte() != 0.toByte()
+        disabledColor = parcel.readString()
+        hero = parcel.readValue(Int::class.java.classLoader) as? Int
+        visibility = parcel.readInt()
+        importantForAccessibility = parcel.readValue(Boolean::class.java.classLoader) as Boolean
+        numberOfLines = parcel.readValue(Int::class.java.classLoader) as? Int
+    }
+
+    @JvmOverloads
+    constructor(text: String? = null, textColor: String? = null, accessibilityText: String? = null,
+                fontName: String? = null, fontSize: Float? = null, html: String? = null,
+                attributeStyles: List<AttributeStyleModel>? = null, fontStyle: String? = null,
+                textAlignment: String = TextAlignment.LEFT.toString(), enabled: Boolean = true,
+                disabledColor: String? = null, hero: Int? = null,visibility: Int = View.VISIBLE, mdn: String? = null,linkType:String?=null,accessibilityTraits:List<String>?=null, importantForAccessibility: Boolean = false) : super() {
+        this.text = text
+        this.textColor = textColor
+        this.accessibilityText = accessibilityText
+        this.fontName = fontName
+        this.fontSize = fontSize
+        this.html = html
+        this.attributeStyles = attributeStyles
+        this.fontStyle = fontStyle
+        this.textAlignment = textAlignment
+        this.enabled = enabled
+        this.disabledColor = disabledColor
+        this.hero = hero
+        this.visibility = visibility
+        this.linkType = linkType
+        this.accessibilityTraits= accessibilityTraits
+        this.importantForAccessibility = importantForAccessibility
+    }
+
+
+    override fun toString(): String {
+        return ToStringBuilder.reflectionToString(this)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as LabelAtomModel
+
+        if (text != other.text) return false
+        if (textColor != other.textColor) return false
+        if (accessibilityText != other.accessibilityText) return false
+        if (fontName != other.fontName) return false
+        if (fontSize != other.fontSize) return false
+        if (html != other.html) return false
+        if (attributeStyles != other.attributeStyles) return false
+        if (fontStyle != other.fontStyle) return false
+        if (textAlignment != other.textAlignment) return false
+        if (enabled != other.enabled) return false
+        if (disabledColor != other.disabledColor) return false
+        if (hero != other.hero) return false
+        if (visibility != other.visibility) return false
+        if (linkType != other.linkType) return false
+        if (accessibilityTraits!= other.accessibilityTraits) return false
+        if (importantForAccessibility != other.importantForAccessibility) return false
+        if (numberOfLines != other.numberOfLines) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + (text?.hashCode() ?: 0)
+        result = 31 * result + (textColor?.hashCode() ?: 0)
+        result = 31 * result + (accessibilityText?.hashCode() ?: 0)
+        result = 31 * result + (fontName?.hashCode() ?: 0)
+        result = 31 * result + (fontSize?.hashCode() ?: 0)
+        result = 31 * result + (html?.hashCode() ?: 0)
+        result = 31 * result + (attributeStyles?.hashCode() ?: 0)
+        result = 31 * result + (fontStyle?.hashCode() ?: 0)
+        result = 31 * result + textAlignment.hashCode()
+        result = 31 * result + (enabled?.hashCode() ?: 0)
+        result = 31 * result + (disabledColor?.hashCode() ?: 0)
+        result = 31 * result + (hero ?: 0)
+        result = 31 * result + (visibility ?: 0)
+        result = 31 * result + (linkType.hashCode() ?: 0)
+        result = 31 * result + (accessibilityTraits?.hashCode() ?: 0)
+        result = 31 * result + (importantForAccessibility?.hashCode() ?: 0)
+        result = 31 * result + (numberOfLines ?: 0)
+        return result
+    }
+
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        super.writeToParcel(parcel, flags)
+        parcel.writeString(text)
+        parcel.writeString(textColor)
+        parcel.writeString(accessibilityText)
+        parcel.writeString(fontName)
+        parcel.writeValue(fontSize)
+        parcel.writeString(html)
+        parcel.writeList(attributeStyles)
+        parcel.writeString(fontStyle)
+        parcel.writeString(textAlignment)
+        parcel.writeByte(if (enabled) 1 else 0)
+        parcel.writeString(disabledColor)
+        parcel.writeValue(hero)
+        parcel.writeInt(visibility)
+        parcel.writeString(linkType)
+        parcel.writeStringList(accessibilityTraits)
+        parcel.writeValue(importantForAccessibility)
+        parcel.writeValue(numberOfLines)
+    }
+
+    override fun describeContents(): Int {
+        return 0
+    }
+
+    companion object CREATOR : Parcelable.Creator<LabelAtomModel> {
+        override fun createFromParcel(parcel: Parcel): LabelAtomModel {
+            return LabelAtomModel(parcel)
+        }
+
+        override fun newArray(size: Int): Array<LabelAtomModel?> {
+            return arrayOfNulls(size)
+        }
+
+        const val TYPE_STRIKE_THROUGH = "strikethrough"
+        const val TYPE_UNDERLINE = "underline"
+        const val TYPE_COLOR = "color"
+        const val TYPE_FONT = "font"
+        const val TYPE_ACTION = "action"
+        const val TYPE_IMAGE = "image"
+        const val STANDALONE = "standAlone"
+        const val INLINE = "inline"
+
+    }
+
+}
