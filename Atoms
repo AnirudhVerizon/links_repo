@@ -1,0 +1,36 @@
+package com.vzw.hss.myverizon.atomic.assemblers.atoms
+
+import com.vzw.hss.myverizon.atomic.assemblers.base.BaseAtomicConverter
+import com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel
+import com.vzw.hss.myverizon.atomic.net.tos.atoms.LabelAtom
+
+/**
+ * A converter for Label atom to generate [LabelAtomModel] from [LabelAtom].
+ * It extends [BaseAtomicConverter] and overrides the [convert] method to initialize Label atom
+ * specific fields. Common fields would be initialized by [BaseAtomicConverter.convert] call.
+ */
+open class LabelAtomConverter : BaseAtomicConverter<LabelAtom, LabelAtomModel>() {
+    override fun convert(transferObject: LabelAtom?): LabelAtomModel {
+        val model = super.convert(transferObject)
+        if (transferObject != null) {
+            model.text = transferObject.text
+            model.textColor = transferObject.textColor
+            model.accessibilityText = transferObject.accessibilityText
+            model.fontName = transferObject.fontName
+            model.fontSize = transferObject.fontSize
+            model.html = transferObject.html
+            model.attributeStyles = AttributeStyleConverter().convert(transferObject.attributeStyles)
+            model.fontStyle = transferObject.fontStyle
+            model.textAlignment = transferObject.textAlignment.toUpperCase()
+            model.hero = transferObject.hero
+            model.accessibilityTraits =transferObject.accessibilityTraits
+            model.importantForAccessibility = transferObject.importantForAccessibility
+            model.numberOfLines = transferObject.numberOfLines
+        }
+        return model
+    }
+
+    override fun getModel(): LabelAtomModel {
+        return LabelAtomModel()
+    }
+}
