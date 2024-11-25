@@ -1,0 +1,110 @@
+        "bStyle": {
+          "textColor": "#FF0000",
+          "textSize": 24
+        },
+
+{
+  "ResponseInfo":{
+    "type":"Success",
+    "code":"00000"
+  },
+  "Page":{
+    "pageType":"x",
+    "template":"collection",
+    "header":{
+      "moleculeName":"header",
+      "molecule":{
+        "moleculeName":"headlineBody",
+        "headline":{
+          "moleculeName":"label",
+          "text":"See who's using what."
+        },
+        "body":{
+          "moleculeName":"label",
+          "text":"Data usage was estimated as of Jul 01."
+        }
+      }
+    },
+    "molecules":[
+      {
+        "moleculeName":"collectionItem",
+        "molecule":{
+          "moleculeName":"label",
+          "text":"Pay your bill."
+        },
+        "action":{
+          "actionType":"openPage",
+          "pageType":"billOverview"
+        }
+      },
+      {
+        "moleculeName":"collectionItem",
+        "molecule":{
+          "moleculeName":"button",
+          "title":"Submit",
+          "action":{
+            "actionType":"cancel"
+          }
+        }
+      },
+      {
+        "moleculeName":"label",
+        "text":"Your bill isblah $50.",
+
+        "textColor":"#FFFF00",
+        "backgroundColor":"#FF0000",
+        "attributes":[{
+          "type":"strikethrough",
+          "location":5,
+          "length":4
+        },
+          {
+            "type":"underline",
+            "location":0,
+            "length":4
+          },
+          {
+            "type":"color",
+            "location":17,
+            "length":3,
+            "textColor":"32CD32"
+          },
+          {
+            "type":"font",
+            "location":10,
+            "length":6,
+            "size":10,
+            "name":"NHaasGroteskDSStd-55Rg"
+          }]
+      },
+      {
+        "moleculeName":"collectionItem",
+        "molecule":{
+          "moleculeName":"label",
+          "text":"I am the third molecule to be listed"
+        }
+      }
+    ],
+    "footer":{
+      "moleculeName":"footer",
+      "molecule":{
+        "moleculeName":"twoButtonView",
+        "primaryButton":{
+          "moleculeName":"button",
+          "title":"Next",
+          "action":{
+            "actionType":"openPage",
+            "pageType":"verifyZip"
+          }
+        },
+        "secondaryButton":{
+          "moleculeName":"button",
+          "title":"Cancel",
+          "action":{
+            "actionType":"back"
+          }
+        }
+      }
+    }
+  }
+}
