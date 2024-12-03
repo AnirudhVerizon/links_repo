@@ -1,0 +1,242 @@
+open class HABContentMoleculeView : RelativeLayout, View.OnFocusChangeListener,
+    StyleApplier<HABContentModel> {
+
+    @set:Inject
+    internal var presenter: BasePresenter? = null
+
+    @set:Inject
+    internal var globalSearchViewPresenter: GlobalSearchViewPresenter? = null
+
+    @set:Inject
+    internal var sharedPreferencesUtil: SharedPreferencesUtil? = null
+    var habClickListener: OnHabClickListener? = null
+    var iv_hab_back: ImageAtomView? = null
+    var iv_search: ImageAtomView? = null
+    var et_search: LabelAtomView? = null
+    var divider: RelativeLayout? = null
+    var iv_assistant: ImageAtomView? = null
+    var hab_content_view_root: LinearLayout? = null
+    var rootRl: RelativeLayout? = null
+    var searchArea: RelativeLayout? = null
+    var searchResultsView: SearchTextFieldView? = null
+    var searchAction: ActionModel? = null
+    var searchDoneAction: ActionModel? = null
+    var searchJob: Job? = null
+    var scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val imm = this.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    var onSearchListener: OnSearchChangeListener? = null
+    var isSearchActive = false
+    var inverted = false
+
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context, attrs, defStyleAttr
+    ) {
+        initView(context)
+    }
+
+
+    private fun initView(context: Context) {
+        View.inflate(context, R.layout.hab_content_view, this)
+        MobileFirstApplication.getObjectGraph(context.applicationContext).inject(this)
+        iv_search = findViewById(R.id.iv_search)
+        et_search = findViewById(R.id.et_search)
+        iv_hab_back = findViewById(R.id.iv_hab_back)
+        divider = findViewById(R.id.dividerContainer)
+        iv_assistant = findViewById(R.id.iv_assistant)
+        hab_content_view_root = findViewById(R.id.hab_content_view_root)
+        rootRl = findViewById(R.id.rootRl)
+        searchArea = findViewById(R.id.searchArea)
+        searchResultsView = findViewById(R.id.searchResultsView)
+        searchResultsView?.onFocusChangeListener = this
+        searchResultsView?.isFocusableInTouchMode = true //Do not keep focus unless user taps on it
+        searchResultsView?.isFocusable = true
+        imm.showSoftInput(searchResultsView, InputMethodManager.SHOW_IMPLICIT)
+        searchResultsView?.showSoftInputOnFocus
+        observerSearch()
+        searchResultsView?.setOnEditorActionListener { view, actionId, keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = searchResultsView?.text.toString()
+                performDoneApiCall(query)
+                true
+            } else false
+        }
+        searchResultsView?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+        iv_hab_back?.setOnClickListener {
+            onSearchListener?.onHabBackPressed()
+        }
+    }
+
+
+    private fun executeAction(actionModel: ActionModel) {
+        val action = convertToAction(actionModel)
+        habClickListener?.OnHabActionClick(action)
+    }
+
+    open fun initListener(onHabClickListener: OnHabClickListener) {
+        this.habClickListener = onHabClickListener
+    }
+
+    fun habSearchListener(onSearchChangeListener: OnSearchChangeListener) {
+        onSearchListener = onSearchChangeListener
+    }
+
+    override fun onFocusChange(p0: View?, focus: Boolean) {
+        if (focus) {
+            iv_hab_back?.visibility = View.VISIBLE
+            iv_assistant?.visibility = View.INVISIBLE
+            divider?.visibility = GONE
+            if(inverted){
+                hab_content_view_root?.setBackgroundColor(ContextCompat.getColor(this.context,R.color.black))
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context,R.color.white))
+            }else{
+                hab_content_view_root?.setBackgroundColor(ContextCompat.getColor(this.context,R.color.white))
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context,R.color.black))
+            }
+            if (!scope.isActive) {
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                observerSearch()
+            }
+            isSearchActive = true
+            onSearchListener?.showOrHideOverlay(true)
+            searchResultsView?.text?.toString()?.let {
+                if (it.isNotEmpty()) {
+                    performApiCall(it)
+                }
+            }
+        }
+    }
+
+    fun clearSearchFocus() {
+        searchResultsView?.clearFocus()
+        searchResultsView?.setText(Constants.EMPTY)
+    }
+
+    fun showFabIcon(){
+        iv_assistant?.visibility = View.VISIBLE
+    }
+
+    fun hideBackIcon(){
+        iv_hab_back?.visibility = View.GONE
+        divider?.visibility = VISIBLE
+        isSearchActive = false
+        hab_content_view_root?.setBackgroundColor(Color.TRANSPARENT)
+    }
+
+    private fun searchTextFlow(): Flow<String> = callbackFlow {
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                trySend(s.toString()).isSuccess
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        }
+        searchResultsView?.addTextChangedListener(watcher)
+        awaitClose { searchResultsView?.removeTextChangedListener(watcher) }
+    }
+
+    private fun observerSearch() {
+        searchTextFlow().debounce(200).filter {
+            if (it.isEmpty() && isSearchActive) {
+                onSearchListener?.hideSearchList(true)
+                onSearchListener?.showOrHideOverlay(true)
+            }
+            it.isNotEmpty() && isSearchActive
+        }.distinctUntilChanged().onEach { query -> performApiCall(query) }.launchIn(scope)
+    }
+
+    private fun performApiCall(query: String) {
+        if (!isSearchActive) {
+            return
+        }
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query
+        )
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            searchAction?.let {
+                globalSearchViewPresenter?.getOverlayData(it, requestParams) { baseResponse ->
+                    if (searchResultsView?.text.toString().isNotEmpty()) {
+                        onSearchListener?.habSearchResults(baseResponse)
+                    } else {
+                        onSearchListener?.hideSearchList(true)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun performDoneApiCall(query: String) {
+        iv_assistant?.visibility = View.VISIBLE
+        searchResultsView?.hideKeyboard()
+        clearSearchFocus()
+        globalSearchViewPresenter?.stopSearchRequest()
+        searchJob?.cancel()
+        scope.cancel()
+        onSearchListener?.hideSearchList(true)
+        onSearchListener?.showOrHideOverlay(false)
+        isSearchActive = false
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query
+        )
+        searchDoneAction?.let {
+            globalSearchViewPresenter?.executeSearchDoneAction(it, requestParams)
+        }
+    }
+
+
+BaseActivity.java
+
+
+    public void replaceFragment(final Fragment fragment, boolean addToBackStack) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        final FragmentTransaction transaction = fragmentManager.beginTransaction();
+
+        if (addToBackStack) {
+            String tag = TAG;
+            if (fragment instanceof BaseFragment) {
+                tag = ((BaseFragment) fragment).getPageType();
+            }
+
+            transaction.addToBackStack(tag).
+                    replace(getFragmentContainerResID(), fragment, tag).commit();
+        } else {
+            transaction.replace(getFragmentContainerResID(), fragment, fragment.getClass().getSimpleName()).commit();
+        }
+    }
+
+    protected void replaceFragment(ResponseHandlingEvent event) {
+        executeCommand(new ReplaceFragmentCommand(event, eventBus, log));
+    }
+
+    public final BaseFragment getCurrentFragment() {
+        Fragment fragment = getSupportFragmentManager().
+                findFragmentById(getFragmentContainerResID());
+        if (fragment instanceof BaseFragment)
+            return (BaseFragment) fragment;
+        return null;
+    }
+
+    @Override
+    public BaseFragment getCurrentAnimationFragment() {
+        return getCurrentFragment();
+    }
+
+    protected final Fragment getCurrentFragmentForBackPressed() {
+        Fragment fragment = getSupportFragmentManager().
+                findFragmentById(getFragmentContainerResID());
+        return fragment;
+    }
+
+    public int getFragmentContainerResID() {
+        return R.id.frame_mainContent;
+    }
+
+    public int getFragmentDividerResID() {
+        return R.id.line_divider;
+    }
+
+
+
