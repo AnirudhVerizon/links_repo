@@ -192,7 +192,30 @@
     }
 
 
+package com.vzw.atomic.views.molecules
 
+import android.content.Context
+import android.os.Parcel
+import android.os.Parcelable
+import android.util.AttributeSet
+import com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel
+import com.vzw.hss.myverizon.atomic.views.atoms.LabelAtomView
+
+class SearchHighlightLabelView : LabelAtomView {
+    constructor (mContext: Context) : super(mContext)
+    constructor(mContext: Context, attribute: AttributeSet) : super(mContext, attribute)
+    constructor(mContext: Context, attribute: AttributeSet, style: Int) : super(
+        mContext,
+        attribute,
+        style
+    )
+
+    override fun applyStyle(model: LabelAtomModel) {
+        super.applyStyle(model)
+    }
+
+
+}
 
 
 
