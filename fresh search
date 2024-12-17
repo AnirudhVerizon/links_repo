@@ -1,0 +1,401 @@
+This is my SearchUtil.kt file
+class SearchUtil {
+    companion object {
+        fun saveRecentSearches(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ) {
+            val searchText = queryText(action) ?: return
+
+            // Fetch current search data
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val searchList = searchData?.split(",")?.filter { it.isNotEmpty() }?.toMutableList() ?: mutableListOf()
+
+            // Remove the search term if it already exists to avoid duplicates
+            searchList.remove(searchText)
+
+            // Add the new search term to the top
+            searchList.add(0, searchText)
+
+            // Limit the list to the maximum allowed searches
+            val maxSearches = action.maxQueryCount
+            val limitedSearchData = searchList.take(maxSearches).joinToString(",")
+
+            // Save the updated search list
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+        }
+
+        fun deleteRecentSearch(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ): Boolean {
+            val searchText = queryText(action) ?: return false
+
+            // Fetch current search data
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val updatedSearchData = searchData
+                ?.split(",")
+                ?.filter { it.isNotEmpty() && it != searchText } // Remove only the exact search term
+                ?.joinToString(",")
+
+            // Update the search list
+            sharedPreferencesUtil?.nSearchList = updatedSearchData?.plus(",")
+            return true
+        }
+
+        fun saveRecentSearch(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            query: String,
+            maxQueryCount: Int
+        ) {
+            if (query.isEmpty()) return
+
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val updatedSearchData = StringBuilder(query)
+
+            searchData?.split(",")
+                ?.filter { it.isNotEmpty() && it != query }
+                ?.forEach { existingQuery ->
+                    updatedSearchData.append(",$existingQuery")
+                }
+
+            val limitedSearchData = updatedSearchData.toString()
+                .split(",")
+                .take(maxQueryCount)
+                .joinToString(",")
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+        }
+
+
+
+//        fun saveRecentSearches(
+//            sharedPreferencesUtil: SharedPreferencesUtil?,
+//            action: SaveSearchQueryAction
+//        ) {
+//            if (queryText(action)?.isEmpty() == true) {
+//                return
+//            }
+//            queryText(action)?.let { searchText ->
+//                val searchData = sharedPreferencesUtil?.nSearchList
+//                if (searchData?.isEmpty() == true) {
+//                    sharedPreferencesUtil.nSearchList = "${searchText},"
+//                } else {
+//                    val newSearchData = StringBuilder(searchText)
+//                    searchData?.split(",")?.filter { it.isNotEmpty() && it != searchText }
+//                        ?.forEach { _ ->
+//                            newSearchData.append(",$searchText")
+//                        }
+//                    sharedPreferencesUtil?.nSearchList = newSearchData.toString()
+//                    val maxSearches = action.maxQueryCount
+//                    val limitedSearchData =
+//                        newSearchData.toString().split(",").take(maxSearches).joinToString(",")
+//                    sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+//                }
+//            }
+//        }
+//
+//        // Deleting a specific recent search
+//        fun deleteRecentSearch(
+//            sharedPreferencesUtil: SharedPreferencesUtil?,
+//            action: SaveSearchQueryAction
+//        ): Boolean {
+//            if (queryText(action)?.isEmpty() == true) {
+//                return false
+//            }
+//            queryText(action)?.let { searchText ->
+//                val searchData = sharedPreferencesUtil?.nSearchList
+//                val updatedSearchData =
+//                    searchData?.split(",")?.filter { it.isNotEmpty() && it != searchText }
+//                        ?.joinToString(",")
+//                sharedPreferencesUtil?.nSearchList = updatedSearchData?.plus(",")
+//                return true  // Refreshing the
+//            } ?: run {
+//                return false
+//            }
+//        }
+
+        fun queryText(action: SaveSearchQueryAction): String? {
+            action.extraParams?.let {
+                if (it.isNotEmpty()) {
+                    return it["searchInput"]
+                }
+            }
+            return null
+        }
+
+        fun recentSearchModel(query: String): DelegateModel {
+            val listItem =
+                "{\"moleculeName\":\"listItem\",\"line\":{\"type\":\"none\"},\"molecule\":{\"topPadding\":12,\"bottomPadding\":16,\"leftPadding\":16,\"rightPadding\":16,\"moleculeName\":\"stack\",\"useHorizontalMargins\":true,\"useVerticalMargins\":true,\"molecules\":[{\"moleculeName\":\"stackItem\",\"molecule\":{\"moleculeName\":\"label\",\"text\":\"${query}\",\"fontStyle\":\"RegularBodyLarge\"}},{\"moleculeName\":\"stackItem\",\"horizontalAlignment\":\"trailing\",\"molecule\":{\"image\":\"ic_close_notification\",\"moleculeName\":\"image\",\"contentMode\":\"scaleAspectFit\",\"width\":16,\"height\":16}}],\"axis\":\"horizontal\"},\"action\":{\"actionType\":\"saveSearchHistory\",\"action\":\"delete\",\"extraParameters\":{\"searchInput\":\"${query}\"}},\"hideArrow\":true}"
+            val jsonObject = Utils.convertStringToJsonObject(listItem)
+            val model = DynamicMoleculeConverterUtil().getDelegateModel(
+                jsonObject
+            )
+            return model
+        }
+
+        fun modelWithSearchHistory(
+            pageModel: AtomicMoleculeListPageModel?,
+            sharedPreferencesUtil: SharedPreferencesUtil?
+        ) {
+            pageModel?.listTemplate?.list?.let {
+                val searchData = sharedPreferencesUtil?.nSearchList
+                val delegateModelList = mutableListOf<DelegateModel>()
+                searchData?.split(",")?.forEach { query ->
+                    if (query.isNotEmpty()) {
+                        delegateModelList.add(recentSearchModel(query))
+                    }
+                }
+                val index = it.indexOfFirst { it.moleculeId == "SearchHistory" }
+                if (index != -1 && delegateModelList.size > 0) {
+                    it.addAll(index+1, delegateModelList)
+                }
+            }
+        }
+
+    }
+
+
+These are snippets from my HABContentMoleculeView.kt file
+
+    private fun initView(context: Context) {
+        View.inflate(context, R.layout.hab_content_view, this)
+        MobileFirstApplication.getObjectGraph(context.applicationContext).inject(this)
+        iv_search = findViewById(R.id.iv_search)
+        et_search = findViewById(R.id.et_search)
+        iv_hab_back = findViewById(R.id.iv_hab_back)
+        divider = findViewById(R.id.dividerContainer)
+        iv_assistant = findViewById(R.id.iv_assistant)
+        hab_content_view_root = findViewById(R.id.hab_content_view_root)
+        rootRl = findViewById(R.id.rootRl)
+        searchArea = findViewById(R.id.searchArea)
+        searchResultsView = findViewById(R.id.searchResultsView)
+        searchResultsView?.onFocusChangeListener = this
+        searchResultsView?.isFocusableInTouchMode = true //Do not keep focus unless user taps on it
+        searchResultsView?.isFocusable = true
+        imm.showSoftInput(searchResultsView, InputMethodManager.SHOW_IMPLICIT)
+        searchResultsView?.showSoftInputOnFocus
+        observerSearch()
+        searchResultsView?.setOnEditorActionListener { view, actionId, keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = searchResultsView?.text.toString()
+                performDoneApiCall(query)
+                true
+            } else false
+        }
+        searchResultsView?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+        iv_hab_back?.setOnClickListener {
+            onSearchListener?.onHabBackPressed()
+        }
+    }
+
+
+    private fun executeAction(actionModel: ActionModel) {
+        val action = convertToAction(actionModel)
+        habClickListener?.OnHabActionClick(action)
+    }
+
+    open fun initListener(onHabClickListener: OnHabClickListener) {
+        this.habClickListener = onHabClickListener
+    }
+
+private fun searchTextFlow(): Flow<String> = callbackFlow {
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                trySend(s.toString()).isSuccess
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        }
+        searchResultsView?.addTextChangedListener(watcher)
+        awaitClose { searchResultsView?.removeTextChangedListener(watcher) }
+    }
+
+    private fun observerSearch() {
+        searchTextFlow()
+            .debounce(200)
+            .filter {
+                if (it.isEmpty() && isSearchActive) {
+                    onSearchListener?.showOrHideOverlay(
+                        true,
+                        globalSearchListTemplateModel = initialSearchTemplate()
+                    )
+                }
+                it.isNotEmpty() && isSearchActive
+            }
+            .distinctUntilChanged()
+            .onEach { query ->
+                // Save the query
+                SearchQueryManager.currentQuery = query
+                performApiCall(query)
+            }
+            .launchIn(scope)
+    }
+
+    private fun performApiCall(query: String) {
+        if (!isSearchActive) {
+            return
+        }
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query,
+            "searchPageType" to (baseActivity?.currentFragment?.pageType ?: "")
+        )
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            searchAction?.let {
+                globalSearchViewPresenter?.getOverlayData(it, requestParams) { baseResponse ->
+                    if (searchResultsView?.text.toString().isNotEmpty()) {
+                        onSearchListener?.habSearchResults(baseResponse)
+                    } else {
+                        onSearchListener?.showOrHideOverlay(
+                            true,
+                            globalSearchListTemplateModel = initialSearchTemplate()
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun performDoneApiCall(query: String) {
+        iv_assistant?.visibility = View.VISIBLE
+        searchResultsView?.hideKeyboard()
+        clearSearchFocus()
+        globalSearchViewPresenter?.stopSearchRequest()
+        searchJob?.cancel()
+        scope.cancel()
+        onSearchListener?.hideSearchList(true)
+        onSearchListener?.showOrHideOverlay(false, globalSearchListTemplateModel)
+        isSearchActive = false
+
+        SearchUtil.saveRecentSearch(sharedPreferencesUtil, query, 5)
+
+
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query,
+            "searchPageType" to (baseActivity?.currentFragment?.pageType ?: "")
+        )
+        searchDoneAction?.let {
+            globalSearchViewPresenter?.executeSearchDoneAction(it, requestParams)
+        }
+    }
+
+    private fun initialSearchTemplate(): GlobalSearchListTemplateModel? {
+        return globalSearchListTemplateModel.apply {
+            if (this?.pageData != null && this.pageData is AtomicMoleculeListPageModel) {
+                initialialMoleculeList?.let {
+                    val newList = mutableListOf<DelegateModel>().apply {
+                        this.addAll(it)
+                    }
+                    (this.pageData as AtomicMoleculeListPageModel).listTemplate?.list = newList
+                }
+            }
+        }
+    }
+
+
+these are some related code from my BaseActivity.java
+protected void processEvent(ResponseHandlingEvent event) {
+else if (event.getAction() == ResponseHandlingEvent.Action.SAVE_SEARCH_HISTORY) {
+            if (event.getExtraInfo() instanceof SaveSearchQueryAction action) {
+                if (action.getAction() != null && action.getAction().equals("save")) {
+                    SearchUtil.Companion.saveRecentSearches(sharedPreferencesUtil, action);
+                } else {
+                    SearchUtil.Companion.deleteRecentSearch(sharedPreferencesUtil, action);
+                }
+            }
+        } else if (event.getAction() == ResponseHandlingEvent.Action.SCROLL_TO_TOP_ACTION) {
+            MobileFirstApplication.getLogHandler().d(TAG, "SCROLL_TO_TOP_ACTION");
+            stickyEventBus.postSticky(new ScrollToTopEvent(true));
+}
+
+
+ protected void resetHabSearchView() {
+        if (searchListPresenter != null) {
+            searchListPresenter.stopSearchRequest();
+        }
+        habContentMoleculeView.showFabIcon();
+        habContentMoleculeView.hideBackIcon();
+        if (searchOverlayView != null) {
+            searchOverlayView.setVisibility(View.GONE);
+            searchOverlayView.removeAllViews();
+        }
+        if (habContentMoleculeView != null) {
+            habContentMoleculeView.clearSearchFocus();
+        }
+        hideSearchOverlay();
+        mToolbar.setVisibility(View.VISIBLE);
+    }
+
+
+    private void hideSearchOverlay() {
+        searchOverlayView.setVisibility(View.GONE);
+        searchListTemplateView.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void habSearchResults(@NonNull BaseResponse baseResponse) {
+        if (baseResponse instanceof GlobalSearchListTemplateModel) {
+            GlobalSearchListMoleculePageModel pagemodel = (GlobalSearchListMoleculePageModel) ((GlobalSearchListTemplateModel) baseResponse).getPageData();
+            assert pagemodel != null;
+            if (pagemodel.getListTemplate() != null) {
+                searchListTemplateView.applyStyle(pagemodel.getListTemplate());
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                searchOverlayView.setVisibility(View.GONE);
+                searchListTemplateView.setOnListItemClickListener(delegateModel -> {
+                    if (delegateModel.getActionModel() != null) {
+                        Action action = ActionModelConverter.Companion.convertToAction(delegateModel.getActionModel());
+                        executeSearchResultsAction(action);
+                    }
+                });
+            }
+        }
+    }
+
+    @Override
+    public void showOrHideOverlay(boolean show, GlobalSearchListTemplateModel model) {
+        runOnUiThread(() -> {
+            if (show) {
+                searchOverlayView.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.GONE);
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                if (null != model && model.getPageData() != null) {
+                    AtomicMoleculeListPageModel pageModel = (AtomicMoleculeListPageModel) model.getPageData();
+                    SearchUtil.Companion.modelWithSearchHistory(pageModel,sharedPreferencesUtil);
+                    searchListTemplateView.applyStyle(pageModel.getListTemplate());
+                } else {
+                    searchListTemplateView.setBackgroundColor(Color.WHITE);
+                }
+            } else {
+                searchOverlayView.setVisibility(View.GONE);
+                searchListPresenter.hideKeyBoard(this);
+                habContentMoleculeView.showFabIcon();
+                habContentMoleculeView.hideBackIcon();
+                mToolbar.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
+    public void hideSearchList(boolean hide) {
+        runOnUiThread(() -> {
+            if (hide) {
+                searchListTemplateView.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    @Override
+    public void onHabBackPressed() {
+        resetHabSearchView();
+    }
+
+    public void executeSearchResultsAction(Action action) {
+        resetHabSearchView();
+        searchListPresenter.executeAction(action);
+    }
+
+
+}
+
+
