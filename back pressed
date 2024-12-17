@@ -1,0 +1,133 @@
+protected void resetHabSearchView() {
+        if (searchListPresenter != null) {
+            searchListPresenter.stopSearchRequest();
+        }
+        habContentMoleculeView.showFabIcon();
+        habContentMoleculeView.hideBackIcon();
+        if (searchOverlayView != null) {
+            searchOverlayView.setVisibility(View.GONE);
+            searchOverlayView.removeAllViews();
+        }
+        if (habContentMoleculeView != null) {
+            habContentMoleculeView.clearSearchFocus();
+        }
+        hideSearchOverlay();
+        mToolbar.setVisibility(View.VISIBLE);
+    }
+
+
+    private void hideSearchOverlay() {
+        searchOverlayView.setVisibility(View.GONE);
+        searchListTemplateView.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void habSearchResults(@NonNull BaseResponse baseResponse) {
+        if (baseResponse instanceof GlobalSearchListTemplateModel) {
+            GlobalSearchListMoleculePageModel pagemodel = (GlobalSearchListMoleculePageModel) ((GlobalSearchListTemplateModel) baseResponse).getPageData();
+            assert pagemodel != null;
+            if (pagemodel.getListTemplate() != null) {
+                searchListTemplateView.applyStyle(pagemodel.getListTemplate());
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                searchOverlayView.setVisibility(View.GONE);
+                searchListTemplateView.setOnListItemClickListener(delegateModel -> {
+                    if (delegateModel.getActionModel() != null) {
+                        Action action = ActionModelConverter.Companion.convertToAction(delegateModel.getActionModel());
+                        executeSearchResultsAction(action);
+                    }
+                });
+            }
+        }
+    }
+
+    @Override
+    public void showOrHideOverlay(boolean show, GlobalSearchListTemplateModel model) {
+        runOnUiThread(() -> {
+            if (show) {
+                searchOverlayView.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.GONE);
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                if (null != model && model.getPageData() != null) {
+                    AtomicMoleculeListPageModel pageModel = (AtomicMoleculeListPageModel) model.getPageData();
+                    SearchUtil.Companion.modelWithSearchHistory(pageModel,sharedPreferencesUtil);
+                    searchListTemplateView.applyStyle(pageModel.getListTemplate());
+                } else {
+                    searchListTemplateView.setBackgroundColor(Color.WHITE);
+                }
+            } else {
+                searchOverlayView.setVisibility(View.GONE);
+                searchListPresenter.hideKeyBoard(this);
+                habContentMoleculeView.showFabIcon();
+                habContentMoleculeView.hideBackIcon();
+                mToolbar.setVisibility(View.VISIBLE);
+            }
+        });
+    }
+
+    @Override
+    public void hideSearchList(boolean hide) {
+        runOnUiThread(() -> {
+            if (hide) {
+                searchListTemplateView.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    @Override
+    public void onHabBackPressed() {
+        resetHabSearchView();
+    }
+
+    public void executeSearchResultsAction(Action action) {
+        resetHabSearchView();
+        searchListPresenter.executeAction(action);
+    }
+
+
+private fun initView(context: Context) {
+        View.inflate(context, R.layout.hab_content_view, this)
+        MobileFirstApplication.getObjectGraph(context.applicationContext).inject(this)
+        iv_search = findViewById(R.id.iv_search)
+        et_search = findViewById(R.id.et_search)
+        iv_hab_back = findViewById(R.id.iv_hab_back)
+        divider = findViewById(R.id.dividerContainer)
+        iv_assistant = findViewById(R.id.iv_assistant)
+        hab_content_view_root = findViewById(R.id.hab_content_view_root)
+        rootRl = findViewById(R.id.rootRl)
+        searchArea = findViewById(R.id.searchArea)
+        searchResultsView = findViewById(R.id.searchResultsView)
+        searchResultsView?.onFocusChangeListener = this
+        searchResultsView?.isFocusableInTouchMode = true //Do not keep focus unless user taps on it
+        searchResultsView?.isFocusable = true
+        imm.showSoftInput(searchResultsView, InputMethodManager.SHOW_IMPLICIT)
+        searchResultsView?.showSoftInputOnFocus
+        observerSearch()
+        searchResultsView?.setOnEditorActionListener { view, actionId, keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = searchResultsView?.text.toString()
+                performDoneApiCall(query)
+                true
+            } else false
+        }
+
+
+        searchResultsView?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+        iv_hab_back?.setOnClickListener {
+            onSearchListener?.onHabBackPressed()
+        }
+    }
+
+
+    private fun executeAction(actionModel: ActionModel) {
+        val action = convertToAction(actionModel)
+        habClickListener?.OnHabActionClick(action)
+    }
+
+    open fun initListener(onHabClickListener: OnHabClickListener) {
+        this.habClickListener = onHabClickListener
+    }
+
+
+}
+
+
