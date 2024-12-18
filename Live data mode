@@ -1,0 +1,83 @@
+protected class ClickLiveDataObserver implements Observer<ClickLiveDataObject> {
+        @Override
+        public void onChanged(ClickLiveDataObject clickLiveDataObject) {
+            if (clickLiveDataObject == null) {
+                return;
+            }
+
+            boolean validRequestParams = clickLiveDataObject.getRequestParams() != null && !
+                    clickLiveDataObject.getRequestParams().isEmpty();
+
+            HashMap<String, Object> requestParams = null;
+            ActionModel action = null;
+
+            if (clickLiveDataObject.getModel() instanceof TabBarAtomModel) {
+                TabBarAtomModel tabBarAtomModel = ((TabBarAtomModel) clickLiveDataObject.getModel());
+                if (tabBarAtomModel.getTabs() != null && !tabBarAtomModel.getTabs().isEmpty()
+                        && tabBarAtomModel.getSelectedTab() >= 0
+                        && tabBarAtomModel.getSelectedTab() < tabBarAtomModel.getTabs().size()) {
+                    action = tabBarAtomModel.getTabs().get(tabBarAtomModel.getSelectedTab()).getActionModel();
+                }
+            } else if (clickLiveDataObject.getModel() instanceof BaseNavigationButtonAtomModel) {
+                action = ((BaseNavigationButtonAtomModel) clickLiveDataObject.getModel()).getAction();
+                /*Sending isDeviceCompatible,isSubscriberEligible values to Settings API*/
+                if (action != null && (action.getPageType()) != null && (action.getPageType()).equals(SETTINGS_LANDING)) {
+                    Map<String, String> existingParams;
+                    Map<String, String> fiveGExtraParams = new HashMap<>();
+                    fiveGExtraParams.put(TAG_ENHANCE_IS_DEVICE_COMPATIBLE, fiveGDeviceSupport.get("isDevice5GCompatible"));
+                    fiveGExtraParams.put(TAG_ENHANCE_RESULT, fiveGDeviceSupport.get("result"));
+                    fiveGExtraParams.put(TAG_ENHANCE_IS_SUBSCRIBER_ELIGIBLE, fiveGDeviceSupport.get("isSubscriberEligible"));
+                    if (action.getExtraParameters() != null) {
+                        existingParams = action.getExtraParameters();
+                        existingParams.putAll(fiveGExtraParams);
+
+                    } else {
+                        existingParams = fiveGExtraParams;
+                    }
+                    action.setExtraParameters(existingParams);
+                }
+            }
+
+            if (clickLiveDataObject.getModel()!=null && clickLiveDataObject.getModel() instanceof ActionModel) {
+                Action clickAction = ActionModelConverter.Companion.convertToAction((ActionModel) clickLiveDataObject.getModel());
+                if (clickAction instanceof OpenPanelAction) {
+                    if (clickAction.getExtraParams() != null && clickAction.getExtraParams().containsKey("nativeSearch")) {
+                        executeSearchResultsAction(clickAction);
+                        return;
+                    }
+                }
+            }
+
+            if (action != null) {
+                if (LoyaltyAssemblerLoader.LOYALTY_ELIGIBILITY_SELECTOR.equalsIgnoreCase(action.getPageType())) {
+                    Map<String, String> extraParams = new HashMap<>();
+                    Map<String, String> existingParams = action.getExtraParameters();
+                    if (existingParams != null) {
+                        extraParams = existingParams;
+                    }
+                    extraParams.put(SetupConverterLoader.SPANISH_INTERCEPT, String.valueOf(sharedPreferencesUtil.getSpanishIntercept()));
+                    extraParams.put(SetupConverterLoader.PARTNER_REWARD_SPANISH_INTERCEPT, String.valueOf(sharedPreferencesUtil.getPartnerRewardSpanishIntercept()));
+                    action.setExtraParameters(extraParams);
+                }
+                executeAction(action, validRequestParams, clickLiveDataObject.getRequestParams());
+            }
+        }
+    }
+
+    protected void executeAction(ActionModel model, boolean withRequestParams, HashMap<String, Object> requestParams) {
+        Action action = ActionModelConverter.Companion.convertToAction(model);
+        if (Utils.isBackAction(action)) {
+            atomicBasePresenter.trackAction(action);
+            onBackPressed();
+            return;
+        }
+        if (withRequestParams) {
+            atomicBasePresenter.executeFormRequest(action, requestParams);
+        } else {
+            atomicBasePresenter.executeAction(action);
+        }
+    }
+
+
+
+
