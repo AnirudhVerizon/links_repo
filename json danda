@@ -1,0 +1,55 @@
+{
+                       "moleculeName": "listItem",
+                       "line": {
+                           "type": "none"
+                       },
+                       "molecule": {
+                           "topPadding": 12,
+                           "bottomPadding": 16,
+                           "leftPadding": 16,
+                           "rightPadding": 16,
+                           "moleculeName": "stack",
+                           "useHorizontalMargins": true,
+                           "useVerticalMargins": true,
+                           "molecules": [
+                               {
+                                   "moleculeName": "stackItem",
+                                   "molecule": {
+                                       "moleculeName": "label",
+                                       "text": "${query}",
+                                       "fontStyle": "RegularBodyLarge"
+                                   }
+                               },
+                               {
+                                   "moleculeName": "stackItem",
+                                   "horizontalAlignment": "trailing",
+                                   "molecule": {
+                                       "moleculeName": "imageButton",
+                                       "image": {
+                                           "image": "ic_close_notification",
+                                           "moleculeName": "image",
+                                           "contentMode": "scaleAspectFit",
+                                           "width": 16,
+                                           "height": 16
+                                       },
+                                       "action": {
+                                           "actionType": "saveSearchHistory",
+                                           "action": "delete",
+                                           "extraParameters": {
+                                               "searchInput": "${query}"
+                                           }
+                                       }
+                                   }
+                               }
+                           ],
+                           "axis": "horizontal"
+                       },
+                       "action": {
+                           "actionType": "search",
+                           "action": "triggerSearch",
+                           "extraParameters": {
+                               "searchInput": "${query}"
+                           }
+                       },
+                       "hideArrow": true
+                   }
