@@ -80,4 +80,274 @@ protected class ClickLiveDataObserver implements Observer<ClickLiveDataObject> {
 
 
 
-
+{
+    "HabContent": {
+        "habSearch": {
+            "image": {
+                "image": "hab_search_black",
+                "moleculeName": "image",
+                "width": 17,
+                "height": 17
+            },
+            "image_inverted": {
+                "image": "hab_search_white",
+                "moleculeName": "image",
+                "width": 17,
+                "height": 17
+            },
+            "action": {
+                "analyticsData": {
+                    "vzdl.page.displayChannel": "mva",
+                    "vzdl.page.linkName": "global nav:hab_btn_search",
+                    "vzdl.page.sourceChannel": "mva"
+                },
+                "actionType": "openPage",
+                "pageType": "nativeSearch",
+                "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/nativeSearchOverview",
+                "extraParameters": {
+                    "browserUrl": "https://www.verizon.com/onesearch/search?source\\\\u003dMFNative",
+                    "category": "HOME_SEARCH_SECURE_REDIRECTING_TO_WEB"
+                }
+            },
+            "label": {
+                "moleculeName": "label",
+                "text": "How can we help?",
+                "accessibilityText": "How can we help? button"
+            }
+        },
+        "cachePolicy": {
+            "expiry": "1732978953472",
+            "persist": true
+        },
+        "habLiveChat": {
+            "image": {
+                "image": "hab_live_chat_black",
+                "imageFormat": "gif",
+                "moleculeName": "image",
+                "width": 20,
+                "height": 20
+            },
+            "image_inverted": {
+                "image": "hab_live_chat_white",
+                "imageFormat": "gif",
+                "moleculeName": "image",
+                "width": 20,
+                "height": 20
+            },
+            "action": {
+                "actionType": "openPanel",
+                "extraParameters": {
+                    "chatbotSourceType": "hab"
+                },
+                "panel": "right"
+            },
+            "label": {
+                "moleculeName": "label",
+                "text": "Chat with an agent"
+            }
+        },
+        "habLiveChatNewMessages": {
+            "image": {
+                "image": "hab_live_chat_newmessage_black",
+                "imageFormat": "gif",
+                "moleculeName": "image",
+                "width": 20,
+                "height": 20
+            },
+            "image_inverted": {
+                "image": "hab_live_chat_newmessage_white",
+                "imageFormat": "gif",
+                "moleculeName": "image",
+                "width": 20,
+                "height": 20
+            },
+            "action": {
+                "actionType": "openPanel",
+                "extraParameters": {
+                    "chatbotSourceType": "hab"
+                },
+                "panel": "right"
+            },
+            "label": {
+                "moleculeName": "label",
+                "text": "Return to chat with an agent"
+            }
+        },
+        "habNativeSearch": {
+            "habTextField": {
+                "moleculeName": "habTextField",
+                "placeholder": "How can we help?"
+            },
+            "queryHint": {
+                "molceuleName": "label",
+                "text": "How can we help?",
+                "fontStyle": "RegularBodyLarge"
+            },
+            "initialSearchTemplate": {
+                "pageType": "globalSearchResult",
+                "template": "globalSearchList",
+                "header": {
+                    "moleculeName": "header",
+                    "topPadding": 12,
+                    "bottomPadding": 12,
+                    "molecule": {
+                        "moleculeName": "stack",
+                        "spacing": 12,
+                        "axis": "horizontal",
+                        "molecules": [
+                            {
+                                "moleculeName": "stackItem",
+                                "molecule": {
+                                    "moleculeName": "imageButton",
+                                    "image": {
+                                        "moleculeName": "image",
+                                        "image": "bot_header",
+                                        "width": 16,
+                                        "height": 16
+                                    },
+                                    "action": {
+                                        "actionType": "openPanel",
+                                        "extraParameters": {
+                                            "nativeSearch": true,
+                                            "chatbotSourceType": "hab"
+                                        },
+                                        "panel": "right"
+                                    }
+                                }
+                            },
+                            {
+                                "moleculeName": "stackItem",
+                                "molecule": {
+                                    "moleculeName": "link",
+                                    "action": {
+                                        "actionType": "openPanel",
+                                        "extraParameters": {
+                                            "nativeSearch": true,
+                                            "chatbotSourceType": "hab"
+                                        },
+                                        "panel": "right"
+                                    },
+                                    "title": "Chat with us"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "sections": [
+                    {
+                        "id": "SearchHistory",
+                        "header": {
+                            "topPadding": 0,
+                            "bottomPadding": 12,
+                            "moleculeName": "sectionHeader",
+                            "molecule": {
+                                "moleculeName": "label",
+                                "fontStyle": "BoldBodyLarge",
+                                "text": "Recent Searches"
+                            }
+                        },
+                        "rows": []
+                    },
+                    {
+                        "header": {
+                            "topPadding": 0,
+                            "bottomPadding": 12,
+                            "moleculeName": "sectionHeader",
+                            "molecule": {
+                                "moleculeName": "label",
+                                "fontStyle": "BoldBodyLarge",
+                                "text": "Quick Links"
+                            }
+                        },
+                        "rows": [
+                            {
+                                "topPadding": 12,
+                                "moleculeName": "listItem",
+                                "molecule": {
+                                    "moleculeName": "label",
+                                    "text": "Pay bill",
+                                    "fontStyle": "RegularBodyLarge"
+                                },
+                                "line": {
+                                    "type": "none"
+                                },
+                                "action": {
+                                    "actionType": "openPage",
+                                    "pageType": "payBillAction"
+                                },
+                                "bottomPadding": 12,
+                                "accessibilityText": "Pay bill",
+                                "hideArrow": true
+                            },
+                            {
+                                "topPadding": 12,
+                                "moleculeName": "listItem",
+                                "molecule": {
+                                    "moleculeName": "label",
+                                    "text": "Add a line",
+                                    "fontStyle": "RegularBodyLarge"
+                                },
+                                "line": {
+                                    "type": "none"
+                                },
+                                "action": {
+                                    "actionType": "openPage",
+                                    "pageType": "addALine"
+                                },
+                                "bottomPadding": 12,
+                                "accessibilityText": "Add a line",
+                                "hideArrow": true
+                            },
+                            {
+                                "topPadding": 12,
+                                "moleculeName": "listItem",
+                                "molecule": {
+                                    "moleculeName": "label",
+                                    "text": "Find store",
+                                    "fontStyle": "RegularBodyLarge"
+                                },
+                                "line": {
+                                    "type": "none"
+                                },
+                                "action": {
+                                    "actionType": "openPage",
+                                    "pageType": "findStore"
+                                },
+                                "bottomPadding": 12,
+                                "accessibilityText": "Find store",
+                                "hideArrow": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "searchAction": {
+                "actionType": "openPage",
+                "pageType": "globalSearchTypeahead",
+                "background": true,
+                "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/globalSearchResult",
+                "extraParameters": {
+                    "currentPage": "search"
+                }
+            },
+            "searchDoneAction": {
+                "actionType": "actions",
+                "actions": [
+                    {
+                        "actionType": "saveSearchHistory",
+                        "action": "save",
+                        "extraParameters": {
+                            "searchInput": ""
+                        }
+                    },
+                    {
+                        "actionType": "openPage",
+                        "pageType": "globalSearchResult",
+                        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+                        "extraParameters": {
+                            "currentPage": "done"
+                        }
+                    }
+                ]
+            }
+        },
