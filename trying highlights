@@ -180,4 +180,8 @@ public open class LabelAtomModel : com.vzw.hss.myverizon.atomic.models.base.Base
     public open fun writeToParcel(parcel: android.os.Parcel, flags: kotlin.Int): kotlin.Unit { /* compiled code */ }
 }
 
-
+Function invocation 'SearchHighlightLabelView(...)' expected
+None of the following functions can be called with the arguments supplied.
+<init>(Context) defined in com.vzw.atomic.views.molecules.SearchHighlightLabelView
+<init>(Context, AttributeSet) defined in com.vzw.atomic.views.molecules.SearchHighlightLabelView
+<init>(Context, AttributeSet, Int) defined in com.vzw.atomic.views.molecules.SearchHighlightLabelView
