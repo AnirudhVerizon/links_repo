@@ -99,3 +99,85 @@ class SearchHighlightLabelView : LabelAtomView {
             globalSearchViewPresenter?.executeSearchDoneAction(it, requestParams)
         }
     }
+
+
+// IntelliJ API Decompiler stub source generated from a class file
+// Implementation of methods is not available
+
+package com.vzw.hss.myverizon.atomic.models.atoms
+
+public open class LabelAtomModel : com.vzw.hss.myverizon.atomic.models.base.BaseModel {
+    public companion object CREATOR : android.os.Parcelable.Creator<com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel> {
+        public const final val INLINE: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val STANDALONE: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_ACTION: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_COLOR: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_FONT: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_IMAGE: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_STRIKE_THROUGH: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public const final val TYPE_UNDERLINE: kotlin.String = COMPILED_CODE /* compiled code */
+
+        public open fun createFromParcel(parcel: android.os.Parcel): com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel { /* compiled code */ }
+
+        public open fun newArray(size: kotlin.Int): kotlin.Array<com.vzw.hss.myverizon.atomic.models.atoms.LabelAtomModel?> { /* compiled code */ }
+    }
+
+    public constructor(parcel: android.os.Parcel) { /* compiled code */ }
+
+    @kotlin.jvm.JvmOverloads public constructor(text: kotlin.String? = COMPILED_CODE, textColor: kotlin.String? = COMPILED_CODE, accessibilityText: kotlin.String? = COMPILED_CODE, fontName: kotlin.String? = COMPILED_CODE, fontSize: kotlin.Float? = COMPILED_CODE, html: kotlin.String? = COMPILED_CODE, attributeStyles: kotlin.collections.List<com.vzw.hss.myverizon.atomic.models.atoms.AttributeStyleModel>? = COMPILED_CODE, fontStyle: kotlin.String? = COMPILED_CODE, textAlignment: kotlin.String = COMPILED_CODE, enabled: kotlin.Boolean = COMPILED_CODE, disabledColor: kotlin.String? = COMPILED_CODE, hero: kotlin.Int? = COMPILED_CODE, visibility: kotlin.Int = COMPILED_CODE, mdn: kotlin.String? = COMPILED_CODE, linkType: kotlin.String? = COMPILED_CODE, accessibilityTraits: kotlin.collections.List<kotlin.String>? = COMPILED_CODE, importantForAccessibility: kotlin.Boolean = COMPILED_CODE) { /* compiled code */ }
+
+    public final var accessibilityText: kotlin.String? /* compiled code */
+
+    public final var accessibilityTraits: kotlin.collections.List<kotlin.String>? /* compiled code */
+
+    public final var attributeStyles: kotlin.collections.List<com.vzw.hss.myverizon.atomic.models.atoms.AttributeStyleModel>? /* compiled code */
+
+    public final var disabledColor: kotlin.String? /* compiled code */
+
+    public final var enabled: kotlin.Boolean /* compiled code */
+
+    public final var fontName: kotlin.String? /* compiled code */
+
+    public final var fontSize: kotlin.Float? /* compiled code */
+
+    public final var fontStyle: kotlin.String? /* compiled code */
+
+    public final var hero: kotlin.Int? /* compiled code */
+
+    public final var html: kotlin.String? /* compiled code */
+
+    public final var importantForAccessibility: kotlin.Boolean /* compiled code */
+
+    public final var linkType: kotlin.String? /* compiled code */
+
+    public final var numberOfLines: kotlin.Int? /* compiled code */
+
+    public final var size: kotlin.String /* compiled code */
+
+    public final var text: kotlin.String? /* compiled code */
+
+    public final var textAlignment: kotlin.String /* compiled code */
+
+    public final var textColor: kotlin.String? /* compiled code */
+
+    public final var visibility: kotlin.Int /* compiled code */
+
+    public open fun describeContents(): kotlin.Int { /* compiled code */ }
+
+    public open operator fun equals(other: kotlin.Any?): kotlin.Boolean { /* compiled code */ }
+
+    public open fun hashCode(): kotlin.Int { /* compiled code */ }
+
+    public open fun toString(): kotlin.String { /* compiled code */ }
+
+    public open fun writeToParcel(parcel: android.os.Parcel, flags: kotlin.Int): kotlin.Unit { /* compiled code */ }
+}
+
+
