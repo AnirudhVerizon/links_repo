@@ -1,0 +1,101 @@
+ private fun searchTextFlow(): Flow<String> = callbackFlow {
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                trySend(s.toString()).isSuccess
+            }
+
+            override fun afterTextChanged(s: Editable?) {}
+        }
+        searchResultsView?.addTextChangedListener(watcher)
+        awaitClose { searchResultsView?.removeTextChangedListener(watcher) }
+    }
+
+    private fun observerSearch() {
+        searchTextFlow()
+            .debounce(200)
+            .filter {
+                if (it.isEmpty() && isSearchActive) {
+                    onSearchListener?.showOrHideOverlay(
+                        true,
+                        globalSearchListTemplateModel = initialSearchTemplate()
+                    )
+                }
+                it.isNotEmpty() && isSearchActive
+            }
+            .distinctUntilChanged()
+            .onEach { query ->
+
+                performApiCall(query)
+            }
+            .launchIn(scope)
+    }
+
+    private fun performApiCall(query: String) {
+        if (!isSearchActive) {
+            return
+        }
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query,
+            "searchPageType" to (baseActivity?.currentFragment?.pageType ?: "")
+        )
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            searchAction?.let {
+                globalSearchViewPresenter?.getOverlayData(it, requestParams) { baseResponse ->
+                    if (searchResultsView?.text.toString().isNotEmpty()) {
+                        onSearchListener?.habSearchResults(baseResponse)
+                    } else {
+                        onSearchListener?.showOrHideOverlay(
+                            true,
+                            globalSearchListTemplateModel = initialSearchTemplate()
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun performDoneApiCall(query: String) {
+        iv_assistant?.visibility = View.VISIBLE
+        searchResultsView?.hideKeyboard()
+        clearSearchFocus()
+        globalSearchViewPresenter?.stopSearchRequest()
+        searchJob?.cancel()
+        scope.cancel()
+        onSearchListener?.hideSearchList(true)
+        onSearchListener?.showOrHideOverlay(false, globalSearchListTemplateModel)
+        isSearchActive = false
+
+        SearchUtil.saveRecentSearch(sharedPreferencesUtil, query, 5)
+
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query,
+            "searchPageType" to (baseActivity?.currentFragment?.pageType ?: "")
+        )
+
+
+
+
+class SearchHighlightLabelView : LabelAtomView {
+    constructor(mContext: Context) : super(mContext)
+    constructor(mContext: Context, attribute: AttributeSet) : super(mContext, attribute)
+    constructor(mContext: Context, attribute: AttributeSet, style: Int) : super(
+        mContext,
+        attribute,
+        style
+    )
+
+    override fun applyStyle(model: LabelAtomModel) {
+        super.applyStyle(model)
+
+
+       
+        }
+    }
+}
+
+        searchDoneAction?.let {
+            globalSearchViewPresenter?.executeSearchDoneAction(it, requestParams)
+        }
+    }
