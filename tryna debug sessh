@@ -1,0 +1,232 @@
+package com.vzw.mobilefirst.commons.utils
+
+import com.vzw.atomic.views.molecules.HABContentMoleculeView
+import com.vzw.hss.myverizon.atomic.assemblers.organisms.DynamicMoleculeConverterUtil
+import com.vzw.hss.myverizon.atomic.models.organisms.DelegateModel
+import com.vzw.mobilefirst.commonviews.models.atomic.AtomicMoleculeListPageModel
+import com.vzw.mobilefirst.core.models.SaveSearchQueryAction
+import com.vzw.utils.Utils
+
+class SearchUtil {
+    companion object {
+        fun saveRecentSearches(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ) {
+            val searchText = queryText(action) ?: return
+
+            // Fetch current search data
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val searchList = searchData?.split(",")?.filter { it.isNotEmpty() }?.toMutableList()
+                ?: mutableListOf()
+
+            // Remove the search term if it already exists to avoid duplicates
+            searchList.remove(searchText)
+
+            // Add the new search term to the top
+            searchList.add(0, searchText)
+
+            // Limit the list to the maximum allowed searches
+            val maxSearches = action.maxQueryCount
+            val limitedSearchData = searchList.take(maxSearches).joinToString(",")
+
+            // Save the updated search list
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+        }
+
+        fun deleteRecentSearch(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ): Boolean {
+            val searchText = queryText(action) ?: return false
+
+            // Fetch current search data
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val updatedSearchData = searchData
+                ?.split(",")
+                ?.filter { it.isNotEmpty() && it != searchText } // Remove only the exact search term
+                ?.joinToString(",")
+
+            // Update the search list
+            sharedPreferencesUtil?.nSearchList = updatedSearchData?.plus(",")
+            return true
+        }
+
+
+
+        fun saveRecentSearch(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            query: String,
+            maxQueryCount: Int
+        ) {
+            if (query.isEmpty()) return
+
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val updatedSearchData = StringBuilder(query)
+
+            searchData?.split(",")
+                ?.filter { it.isNotEmpty() && it != query }
+                ?.forEach { existingQuery ->
+                    updatedSearchData.append(",$existingQuery")
+                }
+
+            val limitedSearchData = updatedSearchData.toString()
+                .split(",")
+                .take(maxQueryCount)
+                .joinToString(",")
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+        }
+
+
+        fun queryText(action: SaveSearchQueryAction): String? {
+            action.extraParams?.let {
+                if (it.isNotEmpty()) {
+                    return it["searchInput"]
+                }
+            }
+            return null
+        }
+
+
+        fun recentSearchModel(query: String): DelegateModel {
+            val listItem =
+                """
+                    {
+                        "moleculeName": "listItem",
+                        "line": {
+                            "type": "none"
+                        },
+                        "molecule": {
+                            "topPadding": 12,
+                            "bottomPadding": 16,
+                            "leftPadding": 16,
+                            "rightPadding": 16,
+                            "moleculeName": "stack",
+                            "useHorizontalMargins": true,
+                            "useVerticalMargins": true,
+                            "molecules": [
+                                {
+                                    "moleculeName": "stackItem",
+                                    "molecule": {
+                                        "moleculeName": "label",
+                                        "text": "${query}",
+                                        "fontStyle": "RegularBodyLarge"
+                                    },
+                                    "action": {
+                                        "actionType": "search",
+                                        "action": "triggerSearch",
+                                        "extraParameters": {
+                                            "searchInput": "${query}"
+                                        }
+                                    }
+                                },
+                                {
+                                    "moleculeName": "stackItem",
+                                    "horizontalAlignment": "trailing",
+                                    "molecule": {
+                                        "moleculeName": "imageButton",
+                                        "image": {
+                                            "image": "ic_close_notification",
+                                            "moleculeName": "image",
+                                            "contentMode": "scaleAspectFit",
+                                            "width": 16,
+                                            "height": 16
+                                        },
+                                        "action": {
+                                            "actionType": "saveSearchHistory",
+                                            "action": "delete",
+                                            "extraParameters": {
+                                                "searchInput": "${query}"
+                                            }
+                                        }
+                                    }
+                                }
+                            ],
+                            "axis": "horizontal"
+                        },
+                        "hideArrow": true
+                    }
+
+        """.trimIndent()
+
+            val jsonObject = Utils.convertStringToJsonObject(listItem)
+            val model = DynamicMoleculeConverterUtil().getDelegateModel(jsonObject)
+            return model
+        }
+
+        fun modelWithSearchHistory(
+            pageModel: AtomicMoleculeListPageModel?,
+            sharedPreferencesUtil: SharedPreferencesUtil?
+        ) {
+            pageModel?.listTemplate?.list?.let { sectionList ->
+                val searchData = sharedPreferencesUtil?.nSearchList
+                val delegateModelList = mutableListOf<DelegateModel>()
+
+                searchData?.split(",")?.forEach { query ->
+                    if (query.isNotEmpty()) {
+                        delegateModelList.add(recentSearchModel(query))
+                    }
+                }
+
+                // Find the "SearchHistory" section by its ID
+                val searchHistorySectionIndex = sectionList.indexOfFirst { it.moleculeId == "SearchHistory" }
+
+                if (searchHistorySectionIndex != -1) {
+                    if (delegateModelList.isNotEmpty()) {
+                        // If there are recent searches, add them under the section
+                        sectionList.addAll(searchHistorySectionIndex + 1, delegateModelList)
+                    } else {
+                        // If there are no recent searches, remove the section entirely
+                        sectionList.removeAt(searchHistorySectionIndex)
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+
+protected class ClickLiveDataObserver implements Observer<ClickLiveDataObject> {
+  if (clickLiveDataObject.getModel()!=null && clickLiveDataObject.getModel() instanceof ActionModel) {
+                Action clickAction = ActionModelConverter.Companion.convertToAction((ActionModel) clickLiveDataObject.getModel());
+                if (clickAction instanceof OpenPanelAction) {
+                    if (clickAction.getExtraParams() != null && clickAction.getExtraParams().containsKey("nativeSearch")) {
+                        executeSearchResultsAction(clickAction);
+                        return;
+                    }
+                }
+            }
+
+
+
+
+public void habSearchResults(@NonNull BaseResponse baseResponse) {
+        if (baseResponse instanceof GlobalSearchListTemplateModel) {
+            GlobalSearchListMoleculePageModel pagemodel = (GlobalSearchListMoleculePageModel) ((GlobalSearchListTemplateModel) baseResponse).getPageData();
+            assert pagemodel != null;
+            if (pagemodel.getListTemplate() != null) {
+                searchListTemplateView.applyStyle(pagemodel.getListTemplate());
+                searchListTemplateView.setVisibility(View.VISIBLE);
+                searchOverlayView.setVisibility(View.GONE);
+                searchListTemplateView.setOnListItemClickListener(delegateModel -> {
+                    if (delegateModel.getActionModel() != null) {
+                        Action action = ActionModelConverter.Companion.convertToAction(delegateModel.getActionModel());
+                        executeSearchResultsAction(action);
+                    }
+                });
+            }
+        }
+    }
+
+
+public void executeSearchResultsAction(Action action) {
+        resetHabSearchView();
+        searchListPresenter.executeAction(action);
+    }
+public open fun executeAction(
+    action: Action?
+): Unit
+
+
+
