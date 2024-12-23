@@ -1,0 +1,38 @@
+    override fun onFocusChange(p0: View?, focus: Boolean) {
+        if (focus) {
+            iv_hab_back?.visibility = View.VISIBLE
+            iv_assistant?.visibility = View.INVISIBLE
+            divider?.visibility = GONE
+            if (inverted) {
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.black
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.white))
+            } else {
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.white
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.black))
+            }
+            if (!scope.isActive) {
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                observerSearch()
+            }
+            isSearchActive = true
+            onSearchListener?.showOrHideOverlay(
+                true,
+                globalSearchListTemplateModel = initialSearchTemplate()
+            )
+            searchResultsView?.text?.toString()?.let {
+                if (it.isNotEmpty()) {
+                    performApiCall(it)
+                }
+            }
+        }
+    }
