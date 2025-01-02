@@ -1,0 +1,604 @@
+package com.vzw.atomic.views.molecules
+
+import android.content.Context
+import android.graphics.Color
+import android.text.Editable
+import android.text.TextWatcher
+import android.util.AttributeSet
+import android.view.View
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.LinearLayout
+import android.widget.RelativeLayout
+import androidx.core.content.ContextCompat
+import com.vzw.atomic.models.GlobalSearchListTemplateModel
+import com.vzw.atomic.models.molecules.HABContentModel
+import com.vzw.atomic.presenters.GlobalSearchViewPresenter
+import com.vzw.atomic.util.HABContentAtomEnum
+import com.vzw.atomic.util.SearchQueryManager
+import com.vzw.common_utils.Constants
+import com.vzw.hss.myverizon.atomic.models.atoms.ActionModel
+import com.vzw.hss.myverizon.atomic.utils.applyCommonStyles
+import com.vzw.hss.myverizon.atomic.views.StyleApplier
+import com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+import com.vzw.hss.myverizon.atomic.views.atoms.LabelAtomView
+import com.vzw.mobilefirst.MobileFirstApplication
+import com.vzw.hss.myverizon.R
+import com.vzw.hss.myverizon.atomic.models.organisms.DelegateModel
+import com.vzw.hss.myverizon.atomic.utils.Utils
+import com.vzw.mobilefirst.commons.utils.SearchUtil
+import com.vzw.mobilefirst.commons.utils.SharedPreferencesUtil
+import com.vzw.mobilefirst.commons.views.activities.BaseActivity
+import com.vzw.mobilefirst.commons.views.components.SearchTextFieldView
+import com.vzw.mobilefirst.commons.views.listeners.OnHabClickListener
+import com.vzw.mobilefirst.commons.views.listeners.OnSearchChangeListener
+import com.vzw.mobilefirst.commonviews.models.atomic.AtomicMoleculeListPageModel
+import com.vzw.mobilefirst.core.models.SaveSearchQueryAction
+import com.vzw.mobilefirst.core.presenters.BasePresenter
+import com.vzw.mobilefirst.core.utils.atomic.ActionModelConverter.Companion.convertToAction
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+
+open class HABContentMoleculeView : RelativeLayout, View.OnFocusChangeListener,
+    StyleApplier<HABContentModel> {
+
+    @set:Inject
+    internal var presenter: BasePresenter? = null
+
+    @set:Inject
+    internal var globalSearchViewPresenter: GlobalSearchViewPresenter? = null
+
+    @set:Inject
+    internal var sharedPreferencesUtil: SharedPreferencesUtil? = null
+    var habClickListener: OnHabClickListener? = null
+    var iv_hab_back: ImageAtomView? = null
+    var iv_search: ImageAtomView? = null
+    var et_search: LabelAtomView? = null
+    var divider: RelativeLayout? = null
+    var iv_assistant: ImageAtomView? = null
+    var hab_content_view_root: LinearLayout? = null
+    var rootRl: RelativeLayout? = null
+    var searchArea: RelativeLayout? = null
+    var searchResultsView: SearchTextFieldView? = null
+    var searchAction: ActionModel? = null
+    var searchDoneAction: ActionModel? = null
+    var searchJob: Job? = null
+    var scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val imm = this.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    var onSearchListener: OnSearchChangeListener? = null
+    var isSearchActive = false
+    var inverted = false
+    var globalSearchListTemplateModel: GlobalSearchListTemplateModel? = null
+    var baseActivity: BaseActivity? = null
+    var initialialMoleculeList: List<DelegateModel>? = null
+
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context, attrs, defStyleAttr
+    ) {
+        initView(context)
+    }
+
+//    fun initializeActivity(baseActivity: BaseActivity) {
+//        this.baseActivity = baseActivity
+//    }
+
+    fun initializeActivity(): BaseActivity? {
+        return if (context is BaseActivity) {
+            context as BaseActivity
+        } else {
+            null
+        }
+    }
+
+
+    private fun initView(context: Context) {
+        View.inflate(context, R.layout.hab_content_view, this)
+        MobileFirstApplication.getObjectGraph(context.applicationContext).inject(this)
+        iv_search = findViewById(R.id.iv_search)
+        et_search = findViewById(R.id.et_search)
+        iv_hab_back = findViewById(R.id.iv_hab_back)
+        divider = findViewById(R.id.dividerContainer)
+        iv_assistant = findViewById(R.id.iv_assistant)
+        hab_content_view_root = findViewById(R.id.hab_content_view_root)
+        rootRl = findViewById(R.id.rootRl)
+        searchArea = findViewById(R.id.searchArea)
+        searchResultsView = findViewById(R.id.searchResultsView)
+        searchResultsView?.onFocusChangeListener = this
+        searchResultsView?.isFocusableInTouchMode = true //Do not keep focus unless user taps on it
+        searchResultsView?.isFocusable = true
+        imm.showSoftInput(searchResultsView, InputMethodManager.SHOW_IMPLICIT)
+        searchResultsView?.showSoftInputOnFocus
+        observerSearch()
+
+        searchResultsView?.setOnEditorActionListener { view, actionId, keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = searchResultsView?.text.toString()
+                performDoneApiCall(query)
+                true
+            } else false
+        }
+        searchResultsView?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+        iv_hab_back?.setOnClickListener {
+            onSearchListener?.onHabBackPressed()
+        }
+    }
+
+
+    private fun executeAction(actionModel: ActionModel) {
+        val action = convertToAction(actionModel)
+        habClickListener?.OnHabActionClick(action)
+    }
+
+    open fun initListener(onHabClickListener: OnHabClickListener) {
+        this.habClickListener = onHabClickListener
+    }
+
+    override fun applyStyle(model: HABContentModel) {
+        applyCommonStyles(model)
+        this.visibility = View.VISIBLE
+        rootRl?.contentDescription = null
+        iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
+        searchAction = model.searchActionModel
+        searchDoneAction = model.searchDoneActionModel
+        inverted = model.inverted
+        globalSearchListTemplateModel =
+            model.globalSearchListTemplateModel as? GlobalSearchListTemplateModel
+        initialialMoleculeList = model.sectionMoleculeList
+        if (model.quertHintLabel != null) {
+            searchResultsView?.hint = model.quertHintLabel?.text
+            if (model.quertHintLabel?.fontStyle == null) {
+                searchResultsView?.typeface =
+                    Utils.getFontStyle(context, Utils.VERIZONNHGEDS_REGULAR)
+            } else {
+                searchResultsView?.typeface =
+                    Utils.getFontStyle(context, model.quertHintLabel?.fontStyle)
+            }
+        }
+        if (model.inverted) {
+            //dark background
+            rootRl?.let {
+                rootRl?.setBackgroundDrawable(it.context.resources.getDrawable(R.drawable.background_hab_dark))
+                searchResultsView?.setHintTextColor(Color.LTGRAY)
+                searchResultsView?.setTextColor(Color.WHITE)
+                searchResultsView?.setBackgroundColor(Color.TRANSPARENT)
+            }
+            if (model.configuration == "dual" && model.searchActionModel != null) {
+                iv_search?.visibility = View.VISIBLE
+                et_search?.visibility = View.GONE
+                model.habSearch?.image_inverted?.let {
+                    iv_search?.setOnClickListener { }
+                    iv_search?.applyStyle(it)
+                }
+                divider?.visibility = VISIBLE
+                searchResultsView?.visibility = VISIBLE
+                iv_assistant?.visibility = VISIBLE
+            } else if (model.configuration == "dual" && model.habSearch?.image_inverted != null) {
+                searchResultsView?.visibility = GONE
+                iv_search?.visibility = VISIBLE
+                model.habSearch?.image_inverted?.let {
+                    iv_search?.applyStyle(it)
+                }
+                searchArea?.setOnClickListener {
+                    model.habSearch?.action?.let { it1 -> executeAction(it1) }
+                }
+                model.habSearch?.label?.let {
+                    et_search?.applyStyle(it)
+                }
+                divider?.visibility = VISIBLE
+            } else {
+                iv_search?.visibility = GONE
+                searchResultsView?.visibility = GONE
+            }
+
+
+            if (model.habContentState == HABContentAtomEnum.ASSISTANT && model.habAssistant?.image_inverted != null) {
+                model.habAssistant?.image_inverted?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habAssistant?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    model.habAssistant?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    divider?.visibility = GONE
+                    searchArea?.setOnClickListener {
+                        model.habAssistant?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    rootRl?.contentDescription = model.habAssistant?.label?.accessibilityText
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+            } else if (model.habContentState == HABContentAtomEnum.LIVECHAT && model.habLiveChat?.image_inverted != null) {
+                model.habLiveChat?.image_inverted?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habLiveChat?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    divider?.visibility = GONE
+                    model.habLiveChat?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    searchArea?.setOnClickListener {
+                        model.habLiveChat?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    rootRl?.contentDescription = model.habLiveChat?.label?.accessibilityText
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+            } else if (model.habContentState == HABContentAtomEnum.LIVE_CHAT_NEW_MESSAGE && model.habLiveChatNewMessages?.image_inverted != null) {
+                model.habLiveChatNewMessages?.image_inverted?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habLiveChatNewMessages?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    divider?.visibility = GONE
+                    model.habLiveChatNewMessages?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    searchArea?.setOnClickListener {
+                        model.habLiveChatNewMessages?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    rootRl?.contentDescription =
+                        model.habLiveChatNewMessages?.label?.accessibilityText
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+            }
+
+            rootRl?.context?.resources?.getColor(R.color.white)?.let { et_search?.setTextColor(it) }
+        } else {
+            //Light background
+            rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_light))
+            searchResultsView?.setBackgroundColor(Color.WHITE)
+            searchResultsView?.setHintTextColor(Color.LTGRAY)
+            searchResultsView?.setTextColor(Color.BLACK)
+//            searchView?.setBackgroundColor(Color.WHITE)
+            if (model.configuration.equals("dual") && model.searchActionModel != null) {
+                iv_search?.visibility = View.VISIBLE
+                et_search?.visibility = View.GONE
+                model.habSearch?.image?.let {
+                    iv_search?.applyStyle(it)
+                    iv_search?.setOnClickListener { }
+                }
+                divider?.visibility = VISIBLE
+                searchResultsView?.visibility = VISIBLE
+                iv_assistant?.visibility = VISIBLE
+            } else if (model.configuration != null && model.configuration.equals("dual") && model.habSearch?.image != null) {
+                searchResultsView?.visibility = GONE
+                iv_search?.visibility = VISIBLE
+                model.habSearch?.image?.let {
+                    iv_search?.applyStyle(it)
+                }
+                searchArea?.setOnClickListener {
+                    model.habSearch?.action?.let { it1 -> executeAction(it1) }
+                }
+                divider?.visibility = VISIBLE
+                model.habSearch?.label?.let {
+                    et_search?.applyStyle(it)
+                }
+            } else {
+                iv_search?.visibility = GONE
+                searchResultsView?.visibility = GONE
+            }
+            if (model.habContentState == HABContentAtomEnum.ASSISTANT && model.habAssistant?.image != null) {
+                model.habAssistant?.image?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habAssistant?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    divider?.visibility = GONE
+                    model.habAssistant?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    searchArea?.setOnClickListener {
+                        model.habAssistant?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    if (model.habAssistant?.label?.accessibilityText?.isNotEmpty() == true) {
+                        rootRl?.contentDescription = model.habAssistant?.label?.accessibilityText
+                    } else {
+                        rootRl?.contentDescription = model.habAssistant?.label?.text
+                    }
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+                if (model.habAssistant?.label?.accessibilityText?.isNotEmpty() == true) {
+                    iv_assistant?.contentDescription = model.habAssistant?.label?.accessibilityText
+                } else {
+                    iv_assistant?.contentDescription = model.habAssistant?.label?.text
+                }
+            } else if (model.habContentState == HABContentAtomEnum.LIVECHAT && model.habLiveChat?.image != null) {
+                model.habLiveChat?.image?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habLiveChat?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    divider?.visibility = GONE
+                    model.habLiveChat?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    searchArea?.setOnClickListener {
+                        model.habLiveChat?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    if (model.habLiveChat?.label?.accessibilityText?.isNotEmpty() == true) {
+                        rootRl?.contentDescription = model.habLiveChat?.label?.accessibilityText
+                    } else rootRl?.contentDescription = model.habLiveChat?.label?.text
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+                if (model.habLiveChat?.label?.accessibilityText?.isNotEmpty() == true) {
+                    iv_assistant?.contentDescription = model.habLiveChat?.label?.accessibilityText
+                } else iv_assistant?.contentDescription = model.habLiveChat?.label?.text
+            } else if (model.habContentState == HABContentAtomEnum.LIVE_CHAT_NEW_MESSAGE && model.habLiveChatNewMessages?.image != null) {
+                model.habLiveChatNewMessages?.image?.let {
+                    iv_assistant?.applyStyle(it)
+                }
+                iv_assistant?.setOnClickListener {
+                    model.habLiveChatNewMessages?.action?.let { it1 -> executeAction(it1) }
+                }
+                if (model.configuration.equals("single")) {
+                    divider?.visibility = GONE
+                    model.habLiveChatNewMessages?.label?.let {
+                        et_search?.applyStyle(it)
+                    }
+                    searchArea?.setOnClickListener {
+                        model.habLiveChatNewMessages?.action?.let { it1 -> executeAction(it1) }
+                    }
+                    if (model.habLiveChatNewMessages?.label?.accessibilityText?.isNotEmpty() == true) {
+                        rootRl?.contentDescription =
+                            model.habLiveChatNewMessages?.label?.accessibilityText
+                    } else rootRl?.contentDescription = model.habLiveChatNewMessages?.label?.text
+                    iv_assistant?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    searchArea?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                    et_search?.importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
+                }
+                if (model.habLiveChatNewMessages?.label?.accessibilityText?.isNotEmpty() == true) {
+                    iv_assistant?.contentDescription =
+                        model.habLiveChatNewMessages?.label?.accessibilityText
+                } else iv_assistant?.contentDescription = model.habLiveChatNewMessages?.label?.text
+            }
+            rootRl?.context?.resources?.getColor(R.color.black)?.let { et_search?.setTextColor(it) }
+        }
+    }
+
+    fun habSearchListener(onSearchChangeListener: OnSearchChangeListener) {
+        onSearchListener = onSearchChangeListener
+    }
+
+    override fun onFocusChange(p0: View?, focus: Boolean) {
+        if (focus) {
+            iv_hab_back?.visibility = View.VISIBLE
+            iv_assistant?.visibility = View.INVISIBLE
+            divider?.visibility = GONE
+            rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_square_light))
+            et_search?.setText("Search Verizon")
+            if (inverted) {
+                rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_square_dark))
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.black
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.white))
+            } else {
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.white
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.black))
+            }
+            if (!scope.isActive) {
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                observerSearch()
+            }
+            isSearchActive = true
+            onSearchListener?.showOrHideOverlay(
+                true,
+                globalSearchListTemplateModel = initialSearchTemplate()
+            )
+            searchResultsView?.text?.toString()?.let {
+                if (it.isNotEmpty()) {
+                    performApiCall(it)
+                }
+            }
+        }
+    }
+
+    fun clearSearchFocus() {
+        searchResultsView?.clearFocus()
+        searchResultsView?.setText(Constants.EMPTY)
+        searchResultsView?.hideKeyboard()
+        rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_light))
+        et_search?.setText("How can we help?")
+        if (inverted) {
+            rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_dark))
+        }
+    }
+
+    fun showFabIcon() {
+        iv_assistant?.visibility = View.VISIBLE
+    }
+
+    fun hideBackIcon() {
+        iv_hab_back?.visibility = View.GONE
+        divider?.visibility = VISIBLE
+        isSearchActive = false
+        hab_content_view_root?.setBackgroundColor(Color.TRANSPARENT)
+    }
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/hab_content_view_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+        android:id="@+id/iv_hab_back"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:layout_marginLeft="16dp"
+        android:src="@drawable/nav_back"
+        android:visibility="gone" />
+
+    <RelativeLayout
+        android:id="@+id/rootRl"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginHorizontal="@dimen/view_margin_sixteen_dp"
+        android:layout_marginTop="@dimen/view_margin_twenty_dp"
+        android:layout_marginBottom="@dimen/view_margin_sixteen_dp"
+        android:background="@drawable/background_hab_square_dark">
+
+
+        <RelativeLayout
+            android:id="@+id/searchArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/dividerContainer"
+            android:focusable="false"
+            android:focusableInTouchMode="false">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+                android:id="@+id/iv_search"
+                android:layout_width="16.59dp"
+                android:layout_height="16.59dp"
+
+
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/hab_search_white" />
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LabelAtomView
+                android:id="@+id/et_search"
+                style="@style/LabelAtomStyle.RegularBodyLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionSearch"
+                android:text="How can we help?"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <com.vzw.mobilefirst.commons.views.components.SearchTextFieldView
+                android:id="@+id/searchResultsView"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/dividerContainer"
+            android:layout_width="@dimen/view_height_one_dp"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_marginEnd="@dimen/view_margin_fifteen_dp"
+            android:layout_toStartOf="@+id/iv_assistant"
+            android:background="@color/vds_color_interactive_disabled_onlight"
+            android:visibility="visible">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LineAtomView
+                android:id="@+id/divider"
+                android:layout_width="@dimen/view_height_one_dp"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:layout_marginVertical="1dp"
+                android:background="@color/vds_color_interactive_disabled_onlight"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+            android:id="@+id/iv_assistant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:src="@drawable/hab_assistant_white" />
+    </RelativeLayout>
+</LinearLayout>
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="4dp" />
+
+    <padding
+        android:left="20dp"
+        android:right="20dp" />
+    <solid android:color="@color/vds_color_palette_white" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/vds_color_elements_primary_onlight" />
+</shape>
+
+
+
+
+
