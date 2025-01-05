@@ -1,0 +1,273 @@
+I am about to give you some code as context. Don't return me anything until I explicitly Tell you to just reply with okay until I give you further instructions. 
+
+
+open class HABContentMoleculeView : RelativeLayout, View.OnFocusChangeListener,
+    StyleApplier<HABContentModel> {
+
+    @set:Inject
+    internal var presenter: BasePresenter? = null
+
+    @set:Inject
+    internal var globalSearchViewPresenter: GlobalSearchViewPresenter? = null
+
+    @set:Inject
+    internal var sharedPreferencesUtil: SharedPreferencesUtil? = null
+    var habClickListener: OnHabClickListener? = null
+    var iv_hab_back: ImageAtomView? = null
+    var iv_search: ImageAtomView? = null
+    var et_search: LabelAtomView? = null
+    var divider: RelativeLayout? = null
+    var iv_assistant: ImageAtomView? = null
+    var hab_content_view_root: LinearLayout? = null
+    var rootRl: RelativeLayout? = null
+    var searchArea: RelativeLayout? = null
+    var searchResultsView: SearchTextFieldView? = null
+    var searchAction: ActionModel? = null
+    var searchDoneAction: ActionModel? = null
+    var searchJob: Job? = null
+    var scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    val imm = this.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    var onSearchListener: OnSearchChangeListener? = null
+    var isSearchActive = false
+    var inverted = false
+    var globalSearchListTemplateModel: GlobalSearchListTemplateModel? = null
+    var baseActivity: BaseActivity? = null
+    var initialialMoleculeList: List<DelegateModel>? = null
+
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context, attrs, defStyleAttr
+    ) {
+        initView(context)
+    }
+
+    private fun initView(context: Context) {
+        View.inflate(context, R.layout.hab_content_view, this)
+        MobileFirstApplication.getObjectGraph(context.applicationContext).inject(this)
+        iv_search = findViewById(R.id.iv_search)
+        et_search = findViewById(R.id.et_search)
+        iv_hab_back = findViewById(R.id.iv_hab_back)
+        divider = findViewById(R.id.dividerContainer)
+        iv_assistant = findViewById(R.id.iv_assistant)
+        hab_content_view_root = findViewById(R.id.hab_content_view_root)
+        rootRl = findViewById(R.id.rootRl)
+        searchArea = findViewById(R.id.searchArea)
+        searchResultsView = findViewById(R.id.searchResultsView)
+        searchResultsView?.onFocusChangeListener = this
+        searchResultsView?.isFocusableInTouchMode = true //Do not keep focus unless user taps on it
+        searchResultsView?.isFocusable = true
+        imm.showSoftInput(searchResultsView, InputMethodManager.SHOW_IMPLICIT)
+        searchResultsView?.showSoftInputOnFocus
+        observerSearch()
+
+        searchResultsView?.setOnEditorActionListener { view, actionId, keyEvent ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = searchResultsView?.text.toString()
+                performDoneApiCall(query)
+                true
+            } else false
+        }
+        searchResultsView?.imeOptions = EditorInfo.IME_ACTION_SEARCH
+        iv_hab_back?.setOnClickListener {
+            onSearchListener?.onHabBackPressed()
+        }
+    }
+
+
+    private fun executeAction(actionModel: ActionModel) {
+        val action = convertToAction(actionModel)
+        habClickListener?.OnHabActionClick(action)
+    }
+
+    open fun initListener(onHabClickListener: OnHabClickListener) {
+        this.habClickListener = onHabClickListener
+    }
+
+    override fun onFocusChange(p0: View?, focus: Boolean) {
+
+        if (focus) {
+            iv_hab_back?.visibility = View.VISIBLE
+            iv_assistant?.visibility = View.INVISIBLE
+            divider?.visibility = GONE
+            rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_square_light))
+            et_search?.setText("Search Verizon")
+            if (inverted) {
+                rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_square_dark))
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.black
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.white))
+            } else {
+                hab_content_view_root?.setBackgroundColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.white
+                    )
+                )
+                iv_hab_back?.setColorFilter(ContextCompat.getColor(this.context, R.color.black))
+            }
+            if (!scope.isActive) {
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+                observerSearch()
+            }
+            isSearchActive = true
+            onSearchListener?.showOrHideOverlay(
+                true,
+                globalSearchListTemplateModel = initialSearchTemplate()
+            )
+            searchResultsView?.text?.toString()?.let {
+                if (it.isNotEmpty()) {
+                    performApiCall(it)
+                }
+            }
+        }
+    }
+
+    fun clearSearchFocus() {
+        searchResultsView?.clearFocus()
+        searchResultsView?.setText(Constants.EMPTY)
+        searchResultsView?.hideKeyboard()
+        rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_light))
+        et_search?.setText("How can we help?")
+        if (inverted) {
+            rootRl?.setBackgroundDrawable(rootRl?.context?.resources?.getDrawable(R.drawable.background_hab_dark))
+        }
+    }
+
+    fun hideBackIcon() {
+        iv_hab_back?.visibility = View.GONE
+        divider?.visibility = VISIBLE
+        isSearchActive = false
+        hab_content_view_root?.setBackgroundColor(Color.TRANSPARENT)
+    }
+    
+
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/hab_content_view_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+        android:id="@+id/iv_hab_back"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:layout_marginLeft="16dp"
+        android:src="@drawable/nav_back"
+        android:visibility="gone" />
+
+    <RelativeLayout
+        android:id="@+id/rootRl"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginHorizontal="@dimen/view_margin_sixteen_dp"
+        android:layout_marginTop="@dimen/view_margin_twenty_dp"
+        android:layout_marginBottom="@dimen/view_margin_sixteen_dp"
+        android:background="@drawable/background_hab_square_dark">
+
+
+        <RelativeLayout
+            android:id="@+id/searchArea"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_toLeftOf="@+id/dividerContainer"
+            android:focusable="false"
+            android:focusableInTouchMode="false">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+                android:id="@+id/iv_search"
+                android:layout_width="16.59dp"
+                android:layout_height="16.59dp"
+
+
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:src="@drawable/hab_search_white" />
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LabelAtomView
+                android:id="@+id/et_search"
+                style="@style/LabelAtomStyle.RegularBodyLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionSearch"
+                android:text="How can we help?"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <com.vzw.mobilefirst.commons.views.components.SearchTextFieldView
+                android:id="@+id/searchResultsView"
+                android:layout_width="match_parent"
+                android:layout_height="42dp"
+                android:layout_alignWithParentIfMissing="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="@dimen/view_margin_fourteen_dp"
+                android:layout_marginEnd="@dimen/margin_16"
+                android:layout_toEndOf="@id/iv_search"
+                android:background="@color/transparent"
+                android:gravity="center_vertical"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textColorHint="@color/white"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/dividerContainer"
+            android:layout_width="@dimen/view_height_one_dp"
+            android:layout_height="match_parent"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/view_margin_eight_dp"
+            android:layout_marginEnd="@dimen/view_margin_fifteen_dp"
+            android:layout_toStartOf="@+id/iv_assistant"
+            android:background="@color/vds_color_interactive_disabled_onlight"
+            android:visibility="visible">
+
+
+            <com.vzw.hss.myverizon.atomic.views.atoms.LineAtomView
+                android:id="@+id/divider"
+                android:layout_width="@dimen/view_height_one_dp"
+                android:layout_height="match_parent"
+                android:layout_centerVertical="true"
+                android:layout_marginVertical="1dp"
+                android:background="@color/vds_color_interactive_disabled_onlight"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:visibility="visible" />
+        </RelativeLayout>
+
+        <com.vzw.hss.myverizon.atomic.views.atoms.ImageAtomView
+            android:id="@+id/iv_assistant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:src="@drawable/hab_assistant_white" />
+    </RelativeLayout>
+</LinearLayout>
+
+
+    
