@@ -1,0 +1,79 @@
+     companion object {
+        fun saveRecentSearches(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ) {
+            val searchText = queryText(action) ?: return
+
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val searchList = searchData?.split(",")?.filter { it.isNotEmpty() }?.toMutableList()
+                ?: mutableListOf()
+
+
+            searchList.remove(searchText)
+
+
+            searchList.add(0, searchText)
+
+            val maxSearches = 5
+
+
+            val limitedSearchData = searchList.take(maxSearches).joinToString(",")
+
+
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+
+        }
+
+
+
+        fun saveRecentSearchWithSearchDone(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            query: String,
+
+        ) {
+            if (query.isEmpty()) return
+
+            val maxQueryCount = 5
+
+            val searchData = sharedPreferencesUtil?.nSearchList
+            val updatedSearchData = StringBuilder(query)
+
+            searchData?.split(",")
+                ?.filter { it.isNotEmpty() && it != query }
+                ?.forEach { existingQuery ->
+                    updatedSearchData.append(",$existingQuery")
+                }
+
+            val limitedSearchData = updatedSearchData.toString()
+                .split(",")
+                .take(maxQueryCount)
+                .joinToString(",")
+            sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+        }
+        
+        
+        fun saveRecentSearchesCommonLogic(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            searchText: String
+        ) {
+            val searchData = sharedPreferencesUtil?.nSearchList
+            if (searchData?.isEmpty() == true) {
+                sharedPreferencesUtil.nSearchList = "$searchText,"
+            } else {
+                val newSearchData = StringBuilder(searchText)
+                searchData?.split(",")?.filter { it.isNotEmpty() && it != searchText }?.forEach {
+                    newSearchData.append(",$it")
+                }
+                sharedPreferencesUtil?.nSearchList = newSearchData.toString()
+
+                val maxSearches = 5
+                val limitedSearchData =
+                    newSearchData.toString().split(",").take(maxSearches).joinToString(",")
+                sharedPreferencesUtil?.nSearchList = "$limitedSearchData,"
+            }
+        }
+
+
+
+        
