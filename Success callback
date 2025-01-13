@@ -1,0 +1,72 @@
+    private fun performApiCall(query: String) {
+        if (!isSearchActive) {
+            return
+        }
+        val requestParams = hashMapOf<String, Any>(
+            "searchInput" to query,
+            "searchPageType" to (initializeActivity()?.currentFragment?.pageType ?: "")
+        )
+        searchJob?.cancel()
+        searchJob = scope.launch {
+            searchAction?.let {
+                globalSearchViewPresenter?.getOverlayData(it, requestParams) { baseResponse ->
+                    if (searchResultsView?.text.toString().isNotEmpty()) {
+                        onSearchListener?.habSearchResults(baseResponse)
+                    } else {
+                        onSearchListener?.showOrHideOverlay(
+                            true,
+                            globalSearchListTemplateModel = initialSearchTemplate()
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+
+    fun getOverlayData(
+        SearchActionModel: ActionModel,
+        requestParams: java.util.HashMap<String, Any>,
+        onSearchSuccessCallback: Callback<BaseResponse>
+    ) {
+        val action = SearchActionModel.let { ActionModelConverter.convertToAction(it) }
+        action ?: return
+        val request = AtomicFormRequest()
+        request.requestParams = requestParams
+        requestExecutor.executeRequest(
+            getResourceToConsume(
+                action,
+                request,
+                onSearchSuccessCallback
+            )
+        )
+    }
+
+
+
+
+
+
+    public void payBill(Action processPaymentAction, Payment payment, String invoker) {
+        this.payment = payment;
+        displayProgressSpinner();
+        Request request = ProcessPaymentRequestFactory.newProcessPaymentRequest(payment, invoker);
+
+        requestExecutor.executeRequest(getResourceToConsume(processPaymentAction, request,
+                getOnProcessPaymentSuccessCallback(), getOnPayBillnExceptionCallback(), getOnPayBillFailureCallBack()));
+    }
+
+
+    public <E extends Exception> Callback<E> getOnPayBillnExceptionCallback() {
+        return new Callback<E>() {
+            @Override
+            public void notify(E result) {
+                MFAppContext.getInstance().setAutoPayPayNow(false);
+                processException(result);
+            }
+        };
+    }
+
+
+
+
