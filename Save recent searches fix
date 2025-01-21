@@ -70,3 +70,59 @@ public final class SaveSearchQueryAction : com.vzw.mobilefirst.core.models.Actio
     public open fun writeToParcel(parcel: android.os.Parcel, flags: kotlin.Int): kotlin.Unit { /* compiled code */ }
 }
 
+
+},
+      "searchAction": {
+        "actionType": "openPage",
+        "pageType": "globalSearchTypeahead",
+        "background": true,
+        "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/globalSearchResult",
+        "extraParameters": {
+          "currentPage": "search"
+        }
+      },
+      "searchDoneAction": {
+        "actionType": "actions",
+        "actions": [
+          {
+            "actionType": "saveSearchHistory",
+            "action": "save",
+            "extraParameters": {
+              "searchInput": ""
+            }
+          },
+          {
+            "actionType": "openPage",
+            "pageType": "globalSearchResult",
+            "requestURL": "https://mobile-exp.vzw.com/mobile/nsa/nos/gw/launchapp/l2/webview",
+            "extraParameters": {
+              "currentPage": "done"
+            }
+          }
+        ]
+      }
+
+ protected class ClickLiveDataObserver implements Observer<ClickLiveDataObject> {
+        @Override
+        public void onChanged(ClickLiveDataObject clickLiveDataObject) {
+
+            else if (clickLiveDataObject.getModel() instanceof ImageButtonMoleculeModel) {
+                ActionModel actionModel = ((ImageButtonMoleculeModel) clickLiveDataObject.getModel()).getAction();
+                if (actionModel.getActionType() != null && actionModel.getActionType().equals("saveSearchHistory")) {
+                    Action clickAction = ActionModelConverter.Companion.convertToAction(actionModel);
+                    if (SearchUtil.Companion.deleteRecentSearch(sharedPreferencesUtil, (SaveSearchQueryAction) clickAction)) {
+                        showOrHideOverlay(true, habContentMoleculeView.initialSearchTemplate());
+                    }
+                }
+            }
+
+            if (clickLiveDataObject.getModel()!=null && clickLiveDataObject.getModel() instanceof ActionModel) {
+                Action clickAction = ActionModelConverter.Companion.convertToAction((ActionModel) clickLiveDataObject.getModel());
+                if (clickAction instanceof OpenPanelAction) {
+                    if (clickAction.getExtraParams() != null && clickAction.getExtraParams().containsKey("nativeSearch")) {
+                        executeSearchResultsAction(clickAction);
+                        return;
+                    }
+                }
+            }
+
