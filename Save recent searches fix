@@ -126,3 +126,14 @@ public final class SaveSearchQueryAction : com.vzw.mobilefirst.core.models.Actio
                 }
             }
 
+
+protected void processEvent(ResponseHandlingEvent event) {
+else if (event.getAction() == ResponseHandlingEvent.Action.SAVE_SEARCH_HISTORY) {
+            if (event.getExtraInfo() instanceof SaveSearchQueryAction action) {
+                if (action.getAction() != null && action.getAction().equals("save")) {
+                    SearchUtil.Companion.saveRecentSearches(sharedPreferencesUtil, action);
+                } else {
+                    SearchUtil.Companion.deleteRecentSearch(sharedPreferencesUtil, action);
+                }
+            }
+
