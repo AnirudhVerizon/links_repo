@@ -1,0 +1,41 @@
+fun saveRecentSearches(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            action: SaveSearchQueryAction
+        ) {
+            val searchText = queryText(action) ?: return
+            saveRecentSearchesCommonLogic(sharedPreferencesUtil, searchText)
+        }
+
+
+
+        fun saveRecentSearchWithSearchDone(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            query: String,
+        ) {
+            if (query.isEmpty()) return
+            saveRecentSearchesCommonLogic(sharedPreferencesUtil, query)
+        }
+
+
+
+        fun saveRecentSearchesCommonLogic(
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            searchText: String
+        ) {
+            val searchData = sharedPreferencesUtil?.nSearchList
+
+            val searchList = searchData?.split(",")
+                ?.filter { it.isNotEmpty() && it != searchText }
+                ?.toMutableList() ?: mutableListOf()
+
+
+            searchList.add(0, searchText)
+
+
+            val maxSearches = 3
+            val limitedSearchData = searchList.take(maxSearches).joinToString(",")
+
+
+            sharedPreferencesUtil?.nSearchList = limitedSearchData
+            Log.d("recent Searches","$limitedSearchData")
+        }
