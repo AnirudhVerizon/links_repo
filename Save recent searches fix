@@ -39,3 +39,34 @@ fun saveRecentSearches(
             sharedPreferencesUtil?.nSearchList = limitedSearchData
             Log.d("recent Searches","$limitedSearchData")
         }
+
+
+// IntelliJ API Decompiler stub source generated from a class file
+// Implementation of methods is not available
+
+package com.vzw.mobilefirst.core.models
+
+public final class SaveSearchQueryAction : com.vzw.mobilefirst.core.models.Action {
+    public companion object CREATOR : android.os.Parcelable.Creator<com.vzw.mobilefirst.core.models.SaveSearchQueryAction> {
+        public open fun createFromParcel(parcel: android.os.Parcel): com.vzw.mobilefirst.core.models.SaveSearchQueryAction { /* compiled code */ }
+
+        public open fun newArray(size: kotlin.Int): kotlin.Array<com.vzw.mobilefirst.core.models.SaveSearchQueryAction?> { /* compiled code */ }
+    }
+
+    @kotlin.jvm.JvmOverloads public constructor(actionType: kotlin.String, action: kotlin.String) { /* compiled code */ }
+
+    public constructor(parcel: android.os.Parcel) { /* compiled code */ }
+
+    public final var action: kotlin.String? /* compiled code */
+
+    public final var maxQueryCount: kotlin.Int /* compiled code */
+
+    public final var queryToSave: kotlin.String? /* compiled code */
+
+    public open fun accept(actionVisitor: com.vzw.mobilefirst.core.models.ActionVisitor): kotlin.Unit { /* compiled code */ }
+
+    public open fun describeContents(): kotlin.Int { /* compiled code */ }
+
+    public open fun writeToParcel(parcel: android.os.Parcel, flags: kotlin.Int): kotlin.Unit { /* compiled code */ }
+}
+
