@@ -1,0 +1,320 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/linearLayout5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MyVerizon Test Screen"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/revision_no"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:text="Rev.:" />
+
+            <TextView
+                android:id="@+id/revision_val"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rev." />
+
+        </LinearLayout>
+
+        <TextView android:id="@+id/productFlavor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:id="@+id/linearLayout1"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#EEE"
+            android:orientation="vertical"></LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/linearLayout2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/linearLayout3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:weightSum="2">
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Select MDN"
+                    android:textStyle="bold"></TextView>
+
+                <Spinner
+                    android:id="@+id/testMDN"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+
+                    android:layout_weight="1"
+                    android:inputType="phone"></Spinner>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="OR"
+                android:textStyle="bold"></TextView>
+
+            <EditText
+                android:id="@+id/testMDN_editText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:hint="Enter MDN"
+                android:inputType="phone"></EditText>
+
+            <EditText
+                android:id="@+id/version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:hint="Enter Version"
+                android:inputType="phone"></EditText>
+
+            <EditText
+                android:id="@+id/carrier_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:hint="Enter Carrier Name"
+                android:inputType="text"></EditText>
+
+            <EditText
+                android:id="@+id/punchoutUrl"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:paddingVertical="10dp"
+                android:paddingHorizontal="10dp"
+                android:hint="Enter Punch out url"
+                android:background="@drawable/edit_text_atom_normal_background"
+                android:inputType="text"></EditText>
+
+            <LinearLayout
+                android:id="@+id/linearLayout4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/TextView01"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Select Server"
+                    android:textStyle="bold"></TextView>
+
+                <Spinner
+                    android:id="@+id/EnterMdnTestScreen_Server"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="2"></Spinner>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/serverurltv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Server URL"
+                android:textStyle="bold"
+                android:visibility="gone"></TextView>
+
+            <EditText
+                android:id="@+id/ServerURL"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:visibility="gone"></EditText>
+
+
+            <!-- start  -->
+
+            <LinearLayout
+                android:id="@+id/versioncheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MOBILE FIRST PARAMETER"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Select Server"
+                        android:textStyle="bold"></TextView>
+
+                    <Spinner
+                        android:id="@+id/selectmfserver"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"></Spinner>
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/selectedMFURL"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"></EditText>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Redirect To"
+                        android:textStyle="bold"></TextView>
+
+                    <Spinner
+                        android:id="@+id/redirectTo"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"></Spinner>
+                </LinearLayout>
+
+
+public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getIntent() != null && !getIntent().getAction().equalsIgnoreCase(PageControllerUtils.INTENT_ACTION_MVM_TEST_SCREEN)) {
+            return;
+        }
+
+        Constants.sslCertExpCheck = false;
+        Constants.sslCertPinFail = false;
+        DeviceUtils.setOrientationBasedOnDevice(this);
+        setContentView(R.layout.activity_test_screen);
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+        mvmSettings = MVMSettings.getInstance(getApplicationContext());
+        String version;
+        try {
+            version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception e1) {
+            version = "1.0.0";
+        }
+        TextView productFlavor = (TextView)findViewById(R.id.productFlavor);
+        productFlavor.setText("Product flavor is "+getProductFlavor(getApplicationContext()));
+        urls = getResources().getStringArray(R.array.url_array);
+        mfURLS = getResources().getStringArray(R.array.mf_server_array);
+        mf_preapyURLS = getResources().getStringArray(R.array.prepay_mf_server_array);
+        speedTestURLS = getResources().getStringArray(R.array.speedTest_server);
+        assistTouchURLS = getResources().getStringArray(R.array.assist_touch_server_array);
+        mfNsaURLS = getResources().getStringArray(R.array.mf_nsa_server_array);
+        shopPccTestingUrls = getResources().getStringArray(R.array.shop_pcc_testing);
+
+        // setup server spinner
+        serverURLSpinner = (Spinner) findViewById(R.id.EnterMdnTestScreen_Server);
+        serverUrlArrayNames = Arrays.asList(getResources().getStringArray(R.array.Server_url_array));
+        ArrayAdapter<CharSequence> adapterServer = ArrayAdapter.createFromResource(this, R.array.Server_url_array, android.R.layout.simple_spinner_item);
+        adapterServer.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        serverURLSpinner.setAdapter(adapterServer);
+        serverURLSpinner.setSelection(1);
+        OnServerSelectedListener spinnerServerListener = new OnServerSelectedListener(this, adapterServer);
+
+        serverURLSpinner.setOnItemSelectedListener(spinnerServerListener);
+
+        redirectToSpinner = findViewById(R.id.redirectTo);
+        ArrayAdapter<CharSequence> adapterRedirectTo = ArrayAdapter.createFromResource(this, R.array.redirect_to_array, android.R.layout.simple_spinner_item);
+        adapterRedirectTo.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        redirectToSpinner.setAdapter(adapterRedirectTo);
+        redirectToSpinner.setSelection(0);
+
+        OnRedirectToSelectedListener redirectToSelectedListener = new OnRedirectToSelectedListener(this, adapterRedirectTo);
+        redirectToSpinner.setOnItemSelectedListener(redirectToSelectedListener);
+
+        testMDN_editText = (EditText) findViewById(R.id.testMDN_editText);
+        version_editText = (EditText) findViewById(R.id.version);
+        carrierName_editText = (EditText) findViewById(R.id.carrier_name);
+        punchoutUrl = (EditText) findViewById(R.id.punchoutUrl);
+
+
+        //testMDN_editText.setText("7324919596");
+        // Mobile First Param Setting
+        toggleButtonMFswitch = (ToggleButton) findViewById(R.id.toggleButtonMFswitch);
+        toggleButtonAnalyticSwitch = (ToggleButton) findViewById(R.id.toggleButtonAnalyticswitch);
+        analyticsTagValdationwitch = (ToggleButton) findViewById(R.id.analyticsTagValdationwitch);
+        crashRecordingSwitch = (ToggleButton)findViewById(R.id.crashRecordingswitch);
+        sslCerPinErroSwitch = (ToggleButton)findViewById(R.id.sslCerPinErroSwitch);
+        sslCertExpSwitch = (ToggleButton)findViewById(R.id.sslCertExpSwitch);
+        sslPinningOn = (ToggleButton)findViewById(R.id.sslPinningOn);
+        cb_api_key_header = (ToggleButton)findViewById(R.id.api_key_header);
+
+
+
+        selectedMFURL = (EditText) findViewById(R.id.selectedMFURL);
+        selectedNsaMFURL = (EditText) findViewById(R.id.selected_nsa_MFURL);
+        selectedPccTestUrl = (EditText) findViewById(R.id.selected_pcc_test_url);
+
+        selected_prepay_MFURL = (EditText) findViewById(R.id.selectedMFURL_prepay);
+        selectedAssistTouchURL = (EditText) findViewById(R.id.selected_assist_touch_url);
+        ArrayAdapter<CharSequence> mfadapter = ArrayAdapter.createFromResource(this, R.array.mf_server_mapping, android.R.layout.simple_spinner_item);
+        mfadapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        selectmfserver = (Spinner) findViewById(R.id.selectmfserver);
+        selectmfserver.setAdapter(mfadapter);
+        selectmfserver.setSelection(1);
+
+
+Prod
+TdcCanary
+SacCanary
+AwsEast
+AwsWest
+TdcCanaryByPassCdn
+SacCanaryByPassCdn
+AwsEastByPassCdn
+AwsWestByPassCdn
+
+
+
