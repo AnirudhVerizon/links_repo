@@ -317,4 +317,9 @@ AwsEastByPassCdn
 AwsWestByPassCdn
 
 
-
+    <string-array name="redirect_to_array">
+        <item>None</item>
+        <item>tdc-canary</item>
+        <item>sac-canary</item>
+        <item>virginia</item>
+        <item>oregon</item>
