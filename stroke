@@ -1,0 +1,43 @@
+fun setBackGroundToSearch(inverted: Boolean, model: HABContentModel) {
+        if (inverted) {
+            rootRl?.let {
+                gradientDrawable?.setColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.vds_color_background_secondary_dark
+                    )
+                )
+                rootRl?.background = gradientDrawable
+                searchResultsView?.setHintTextColor(Color.LTGRAY)
+                searchResultsView?.setTextColor(Color.WHITE)
+                searchResultsView?.setBackgroundColor(Color.TRANSPARENT)
+            }
+        } else {
+            rootRl?.let {
+                gradientDrawable?.setColor(
+                    ContextCompat.getColor(
+                        this.context,
+                        R.color.vds_color_palette_white
+                    )
+                )
+                rootRl?.background = gradientDrawable
+                searchResultsView?.setBackgroundColor(Color.WHITE)
+                searchResultsView?.setHintTextColor(Color.LTGRAY)
+                searchResultsView?.setTextColor(Color.BLACK)
+            }
+        }
+    }
+
+    fun searchIconColor(model: HABContentModel) {
+        if (model.inverted) {
+            model.habSearch?.image_inverted?.let {
+                iv_search?.setOnClickListener { }
+                iv_search?.applyStyle(it)
+            }
+        } else {
+            model.habSearch?.image?.let {
+                iv_search?.setOnClickListener { }
+                iv_search?.applyStyle(it)
+            }
+        }
+    }
