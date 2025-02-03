@@ -1,0 +1,121 @@
+WebViewOpenURLInAppWebPunchOutFragment.kt
+open fun updateNavigation(jsonObject: JsonObject) {
+        updateNavJsonObject = jsonObject
+        val tabAndNavModel = TabAndNavModel()
+        var shouldUpdateValue = false
+        val titleKey = "title"
+        val buttonTypeKey = "buttonType"
+        val actionKey = "action"
+        if (jsonObject.has(NAVIGATION_BAR)) {
+            shouldUpdateValue = true
+            var navJsonObject = jsonObject[NAVIGATION_BAR].asJsonObject
+            if (navJsonObject.has(KEY_MOLECULE_NAME)) {
+
+                if (navJsonObject != null && navJsonObject.has(ModuleMapConverterUtil.KEY_JSON_NAV_PATTERN) && cacheRepository != null){
+                    val navPatternsJsonFromCache = cacheRepository.getModule(Key(ModuleMapConverterUtil.KEY_JSON_NAVIGATION_PATTERNS))
+                    if (navPatternsJsonFromCache != null){
+                        val navPatternsJsonObjectFromCache = Utils.convertStringToJsonObject(navPatternsJsonFromCache)
+                        if (navPatternsJsonObjectFromCache != null){
+                            val navBarKey = navJsonObject[ModuleMapConverterUtil.KEY_JSON_NAV_PATTERN].asString
+                            if (navPatternsJsonObjectFromCache.has(navBarKey)) {
+                                var title: JsonPrimitive? = null
+                                var buttonType: JsonPrimitive? = null
+                                var backButtonJsonElement: JsonObject? = null
+                                var action: JsonObject? = null
+                                if (navJsonObject.has(titleKey)) {
+                                    title = navJsonObject.getAsJsonPrimitive(titleKey)
+                                }
+                                if (navJsonObject.has(buttonTypeKey)) {
+                                    buttonType = navJsonObject.getAsJsonPrimitive(buttonTypeKey)
+                                }
+                                if (navJsonObject.has(actionKey)){
+                                    action = navJsonObject.getAsJsonObject(actionKey)
+                                }
+
+                                if (navJsonObject.has(ALWAYS_SHOW_BACK_BUTTON_KEY) && navJsonObject.get(
+                                        ALWAYS_SHOW_BACK_BUTTON_KEY
+                                    ).asBoolean
+                                ) {
+                                    backButtonJsonElement = navJsonObject.getAsJsonObject(BACK_BUTTON_KEY)
+                                }
+                                navJsonObject = navPatternsJsonObjectFromCache.getAsJsonObject(navBarKey)
+                                title?.let { navJsonObject.add(titleKey, title) }
+                                buttonType?.let { navJsonObject.add(buttonTypeKey, buttonType) }
+                                action?.let { navJsonObject.addProperty(actionKey, action.toString()) }
+                                backButtonJsonElement?.let { navJsonObject.add(BACK_BUTTON_KEY, backButtonJsonElement) }
+                            }
+                        }
+                    }
+                }
+
+                val navBarModel = getMoleculeModel(navJsonObject[KEY_MOLECULE_NAME].asString, navJsonObject)
+                if (navBarModel is NavigationBarMoleculeModel) {
+                    bridgeNavigationBar = navBarModel
+                    scrTitle = navBarModel.title
+                    tabAndNavModel.navigationBarMoleculeModel = navBarModel
+                }
+            }
+            val payload = jsonObject[NAVIGATION_BAR].asJsonObject
+            if (payload[titleKey] != null) {
+                val title = payload[titleKey].asString
+                titleTextView!!.post { titleTextView!!.text = title }
+            }
+            if (payload["alwaysShowBackButton"] != null)
+                allowBack = payload["alwaysShowBackButton"].asBoolean
+        }
+        if (jsonObject.has(TAB_BAR_HIDDEN)) {
+            shouldUpdateValue = true
+            tabAndNavModel.tabBarHidden = jsonObject[TAB_BAR_HIDDEN].asBoolean
+        }
+        if (jsonObject.has(TAB_BAR_INDEX)) {
+            shouldUpdateValue = true
+            tabAndNavModel.tabBarIndex = jsonObject[TAB_BAR_INDEX].asInt
+        }
+        if (shouldUpdateValue) {
+            if (this@WebViewOpenURLInAppWebPunchOutFragment.isVisible)eventBus.post(NavigationAndTabRefreshEvent(tabAndNavModel))
+        }
+    }
+
+
+public void replaceFragment(final Fragment fragment, boolean addToBackStack) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        final FragmentTransaction transaction = fragmentManager.beginTransaction();
+
+        if (addToBackStack) {
+            String tag = TAG;
+            if (fragment instanceof BaseFragment) {
+                tag = ((BaseFragment) fragment).getPageType();
+            }
+
+            transaction.addToBackStack(tag).
+                    replace(getFragmentContainerResID(), fragment, tag).commit();
+        } else {
+            transaction.replace(getFragmentContainerResID(), fragment, fragment.getClass().getSimpleName()).commit();
+        }
+    }
+
+    protected void replaceFragment(ResponseHandlingEvent event) {
+        executeCommand(new ReplaceFragmentCommand(event, eventBus, log));
+    }
+
+    public final BaseFragment getCurrentFragment() {
+        Fragment fragment = getSupportFragmentManager().
+                findFragmentById(getFragmentContainerResID());
+        if (fragment instanceof BaseFragment)
+            return (BaseFragment) fragment;
+        return null;
+    }
+
+    @Override
+    public BaseFragment getCurrentAnimationFragment() {
+        return getCurrentFragment();
+    }
+
+    protected final Fragment getCurrentFragmentForBackPressed() {
+        Fragment fragment = getSupportFragmentManager().
+                findFragmentById(getFragmentContainerResID());
+        return fragment;
+    }
+
+
+
