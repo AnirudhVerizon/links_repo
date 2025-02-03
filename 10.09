@@ -1,0 +1,5 @@
+    private fun logWebViewlogging(headers: String, finalUrl: String?) {
+        val httpHeadersRequest = HttpHeadersRequest()
+        val logWebViewAction = Action(StringUtils.EMPTY, "logWebViewLogs", StringUtils.EMPTY, "mobile/nsa/nos/gw/launchapp", StringUtils.EMPTY)
+        logWebViewLogs("GET", allCookies!!, finalUrl!!, HttpHeadersRequest(), logWebViewAction, networkRequestor, deviceInfo, launchApplicationPresenter!!, headers)
+    
