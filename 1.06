@@ -1,0 +1,145 @@
+ <string-array name="mf_server_mapping">
+
+        <item>local</item>
+
+        <item>mobile-exp-qa1-west-2</item>
+        <item>mobile-exp-qa2</item>
+        <item>mobile-exp-qa3</item>
+        <item>mobile-exp-qa4</item>
+        <item>mobile-exp-east-qa5</item>
+        <item>mobile-exp-east-qa6</item>
+        <item>mobile-exp-dev5</item>
+        <item>mobile-exp-dev6</item>
+        <item>mobile-exp-dev7</item>
+        <item>mobile-exp-dev8</item>
+        <item>mobile-exp-dev9</item>
+        <item>mobile-exp-dev10</item>
+        <item>mobile-exp-dev1</item>
+        <item>mobile-exp-dev12</item>
+        <item>nqa</item>
+        <item>mobile-exp-qa5</item>
+        <item>mobile-exp-qa6</item>
+        <item>mobile-exp-qa7</item>
+        <item>mobile-exp-qa8</item>
+        <item>mobile-exp-qa9</item>
+        <item>MF Pre-Prod SDC</item>
+        <item>MF Pre-Prod TDC</item>
+        <item>MF Prod</item>
+        <item>MF Prod staging</item>
+        <item>MF Prod exp-aws</item>
+
+        <item>edev5</item>
+        <item>edev6</item>
+        <item>edev7</item>
+        <item>edev8</item>
+        <item>eqa5</item>
+        <item>eqa6</item>
+        <item>eqa7</item>
+        <item>eqa8</item>
+        <item>wsit2</item>
+        <item>wsit1</item>
+        <item>wqa2-mvm</item>
+        <item>exp-qa1</item>
+        <item>exp-qa3</item>
+        <item>exp-prod</item>
+        <item>mobile-exp-dev11</item>
+        <item>mobile-exp-dev2</item>
+        <item>mobile-exp-dev3</item>
+        <item>mobile-exp-dev4</item>
+        <item>mobile-exp-qa9</item>
+        <item>mobile-exp-qa10</item>
+        <item>mobile-exp-qa11</item>
+        <item>mobile-exp-qa12</item>
+        <item>apigee</item>
+        <item>MF prod exp - TDC</item>
+        <item>MF prod exp - SDC</item>
+    </string-array>
+    <string-array name="mf_server_array">
+        <item>http://148.132.28.71:8080</item>
+
+        <item>https://mobile-exp-qa1-west-2.vzw.com</item>
+        <item>https://mobile-exp-qa2.vzw.com</item>
+        <item>https://mobile-exp-qa3.vzw.com</item>
+        <item>https://mobile-exp-qa4.vzw.com</item>
+        <item>https://mobile-exp-east-qa5.verizon.com</item>
+        <item>https://mobile-exp-east-qa6.verizon.com</item>
+        <item>https://mobile-exp-dev5.vzw.com</item>
+        <item>https://mobile-exp-dev6.vzw.com</item>
+        <item>https://mobile-exp-dev7.vzw.com</item>
+        <item>https://mobile-exp-dev8.vzw.com</item>
+        <item>https://mobile-exp-dev9.vzw.com</item>
+        <item>https://mobile-exp-dev10.vzw.com</item>
+        <item>https://mobile-exp-dev1.vzw.com</item>
+        <item>https://mobile-exp-dev12.vzw.com</item>
+        <item>https://mobile-nqa.vzw.com</item>
+        <item>https://mobile-exp-qa5.vzw.com</item>
+        <item>https://mobile-exp-qa6.vzw.com</item>
+        <item>https://mobile-exp-qa7.vzw.com</item>
+        <item>https://mobile-exp-qa8.vzw.com</item>
+        <item>https://mobile-exp-qa9.vzw.com</item>
+        <item>https://mobile-ppd-west.vzw.com</item>
+        <item>https://mobile-ppd-north.vzw.com</item>
+        <item>https://mobile.vzw.com</item>
+        <item>https://mobilestage.vzw.com</item>
+        <item>https://mobile-exp.vzw.com</item>
+
+        <item>https://mobile-edev5.vzw.com</item>
+        <item>https://mobile-edev6.vzw.com</item>
+        <item>https://mobile-edev7.vzw.com</item>
+        <item>https://mobile-edev8.vzw.com</item>
+        <item>https://mobile-eqa5.vzw.com</item>
+        <item>https://mobile-eqa6.vzw.com</item>
+        <item>https://mobile-eqa7.vzw.com</item>
+        <item>https://mobile-eqa8.vzw.com</item>
+        <item>https://mvm-wsit2.vzw.com</item>
+        <item>https://mvm-wsit1.vzw.com</item>
+        <item>https://mvm-wqa2.vzw.com</item>
+        <item>https://mobile-exp-qa1.vzw.com</item>
+        <item>https://mobile-exp-qa3.vzw.com</item>
+        <item>https://mobile-exp.vzw.com</item>
+        <item>https://mobile-exp-dev11.vzw.com</item>
+        <item>https://mobile-exp-dev2.vzw.com</item>
+        <item>https://mobile-exp-dev3.vzw.com</item>
+        <item>https://mobile-exp-dev4.vzw.com</item>
+
+        <item>https://mobile-exp-qa9.vzw.com</item>
+        <item>https://mobile-exp-qa10.vzw.com</item>
+        <item>https://mobile-exp-qa11.vzw.com</item>
+        <item>https://mobile-exp-qa12.vzw.com</item>
+
+        <item>https://api-uat.verizon.com/h8sv-ec2test-proxy/ec2mf/</item>
+        <item>https://mobile-exp-north.vzw.com</item>
+        <item>https://mobile-exp-west.vzw.com</item>
+    </string-array>
+
+
+
+        selected_prepay_MFURL = (EditText) findViewById(R.id.selectedMFURL_prepay);
+        selectedAssistTouchURL = (EditText) findViewById(R.id.selected_assist_touch_url);
+        ArrayAdapter<CharSequence> mfadapter = ArrayAdapter.createFromResource(this, R.array.mf_server_mapping, android.R.layout.simple_spinner_item);
+        mfadapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        selectmfserver = (Spinner) findViewById(R.id.selectmfserver);
+        selectmfserver.setAdapter(mfadapter);
+        selectmfserver.setSelection(1);
+
+        onMobileFirstServerChange mobileFirstServerChange = new onMobileFirstServerChange(this, mfadapter);
+
+        selectmfserver.setOnItemSelectedListener(mobileFirstServerChange);
+
+
+        ArrayAdapter<CharSequence> mfNsaAdapter = ArrayAdapter.createFromResource(this, R.array.mf_nsa_server_mapping, android.R.layout.simple_spinner_item);
+        mfNsaAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        selectnsamfserver = (Spinner) findViewById(R.id.select_nsa_mfserver);
+        selectnsamfserver.setAdapter(mfNsaAdapter);
+        selectnsamfserver.setSelection(0);
+        onMobileFirstNsaServerChange mobileFirstNsaServerChange = new onMobileFirstNsaServerChange(this, mfNsaAdapter);
+        selectnsamfserver.setOnItemSelectedListener(mobileFirstNsaServerChange);
+
+
+        ArrayAdapter<CharSequence> mfPccAdapter = ArrayAdapter.createFromResource(this, R.array.shop_pcc_testing, android.R.layout.simple_spinner_item);
+        mfPccAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        selectpccspinnerurl = (Spinner) findViewById(R.id.select_pcc_spinner_url);
+        selectpccspinnerurl.setAdapter(mfPccAdapter);
+        selectpccspinnerurl.setSelection(0);
+        onMobileFirstPccTestUrls mobileFirstPccTestUrls = new onMobileFirstPccTestUrls(this, mfPccAdapter);
+        selectpccspinnerurl.setOnItemSelectedListener(mobileFirstPccTestUrls);
