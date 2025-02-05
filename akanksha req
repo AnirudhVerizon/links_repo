@@ -1,0 +1,51 @@
+this is a snippet from my WebViewOpenURLInAppWebPunchOutFragment.kt file
+
+        override fun onProgressChanged(view: WebView, newProgress: Int) {
+            progress_line!!.progress = newProgress
+            if (newProgress == 100) {
+                if(StringUtils.isNotEmpty(view.url)) {
+                    Uri.parse(view.url).apply {
+                        newReclicLogUrl = "${this.scheme}://${this.host}${this.path}"
+                        Log.d("webviewURL","$newReclicLogUrl")
+                    }
+                }
+                progress_line!!.visibility = View.GONE
+
+            }
+        }
+
+this is a snippet from my BaseActivity.java file
+
+public void replaceFragment(final Fragment fragment, boolean addToBackStack) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        final FragmentTransaction transaction = fragmentManager.beginTransaction();
+
+        if (addToBackStack) {
+            String tag = TAG;
+            if (fragment instanceof BaseFragment) {
+                tag = ((BaseFragment) fragment).getPageType();
+            }
+
+            transaction.addToBackStack(tag).
+                    replace(getFragmentContainerResID(), fragment, tag).commit();
+        } else {
+            transaction.replace(getFragmentContainerResID(), fragment, fragment.getClass().getSimpleName()).commit();
+        }
+    }
+
+    protected void replaceFragment(ResponseHandlingEvent event) {
+        executeCommand(new ReplaceFragmentCommand(event, eventBus, log));
+    }
+
+    public final BaseFragment getCurrentFragment() {
+        Fragment fragment = getSupportFragmentManager().
+                findFragmentById(getFragmentContainerResID());
+        if (fragment instanceof BaseFragment)
+            return (BaseFragment) fragment;
+
+        return null;
+    }
+
+now in WebViewOpenURLInAppWebPunchOutFragment.kt i need you to write a function such that the current page type of that fragment from base acticity or the viebviewURL newReclicLogUrl is stored in the array. Just note that for each entry or a url or current page type there might be the same thing being added twice so make sure you add that only once into the array.
+
+
