@@ -1,0 +1,191 @@
+package com.vzw.mobilefirst.commons.utils
+
+
+data class NewRelicEvents(
+    var bridgeName: String = "",
+    var pageType: String = "",
+    var pageTitle: String = "",
+    var pageURL: String = "",
+    var requestUUID: String = "",
+    var kinds: String = "",
+    var moduleName: String = "",
+    var error: String = "",
+    var fidoGuid: String = "",
+    var fidoErrorCode: String = "",
+    var eventName: String = "",
+    var timeSinceStart: Long = 0L,
+    var reason: String = "",
+    var daysSinceLastShown: Long = 0,
+    var userSelection: String = "",
+    var wasSuccessful: Boolean = false,
+    var modelName: String = "",
+    var previousPageType: String = "",
+    var actionPageType: String = "",
+
+) {
+
+
+    //  Webview bridge eventtypes
+    val webviewEventType = "MVMWebview"
+    val webviewSubType = "webBridge"
+    val webviewNameBridgeCalled = "webviewBridgeCalled"
+    val webviewNameBridgeCompleted = "webviewBridgeComplete"
+    val webviewNameBridgeNotFound = "webviewBridgeNotFound"
+    val webviewNameBridgeFailedToDecode = "webviewBridgeFailedToDecode"
+    val webviewNameBridgePassedToNative = "webviewBridgePassedToNative"
+
+
+    //Action
+    val actionEventType = "MVMCore"
+    val actionSubTpe = "action"
+    val actionFailedToDecode = "actionFailedToDecode"
+    val actionNotFound = "actionNotFound"
+    val actionInvoked = "actionInvoked"
+    val actionFailed = "actionFailed"
+    val actionComplete = "actionComplete"
+
+
+    val actionNoNetworkSubType = "noNetwork"
+    val actionFailedNoNetwrok = "actionFailedNoNetwrok"
+
+    // new relic params
+    val bridgeNameKey = "bridgeName"
+    val eventSubType = "subtype"
+    val pageTypeKey = "pageType"
+    val pageTitleKey = "pageTitle"
+    val pageURLKey = "pageURL"
+    val requestUUIDKey = "requestUUID"
+    val kindsKey = "kinds"
+    val moduleNameKey = "moduleName"
+    val errorKey = "error"
+    val timeSinceStartKey ="timeSinceStart"
+    val fidoGuidKey = "fidoGuid"
+    val errorCodeKey = "errorCode"
+    val reasonKey = "reason"
+    val daysSinceLastShownKey = "daysSinceLastShown"
+    val userSelectionKey = "userSelection"
+    val wasSuccessfulKey = "wasSuccessful"
+    val previousPageTypeKey = "previousPageType"
+
+    val mvaPageLoadTimeType = "PageLoadTime"
+    val mvmCoreType = "MVMCore"
+    val mvmCorePageStarted = "pageStarted"
+    val mvmCorePageLoadStarted = "pageLoadStarted"
+    val mvmCorePageLoadComplete = "pageLoadComplete"
+    val mvmCorePageProcessingComplete = "pageProcessingComplete"
+    val mvmCorePageRenderComplete = "pageRenderComplete"
+    val mvmCorePageLoadSummary = "pageLoadSummary"
+
+    val requestURLKey = "requestURL"
+    val serverProcessingTimeKey = "serverProcessingTime"
+    val interactionNameKey = "interactionName"
+
+    val recordedTimestampKey = "recordedTimestamp"
+    val actionPageTypeKey = "actionPageType"
+    val requestTimeStampKey = "requestTimeStamp"
+    val responeTimeStampKey = "responseTimeStamp"
+    val webPageURLKey = "webPageURL"
+    val pageVisibleTimeStampKey = "pageVisibleTimeStamp"
+    val responseTimeKey = "responseTime"
+    val uiRenderTimeKey = "uiRenderTime"
+    val nativeLoadTimeKey = "nativeLoadTime"
+    val webpageLoadTimeKey = "webpageLoadTime"
+    val totalLoadTimeKey = "totalLoadTime"
+
+
+     @Inject
+     @JvmField
+     var analyticsUtil: AnalyticsReporter?=null
+
+     init {
+         MobileFirstApplication.getObjectGraph(MobileFirstApplication.getAppContext().applicationContext).inject(this)
+     }
+
+      fun addEvent(eventName:String){
+         var eventType : String ?= null
+         val map = hashMapOf<String,Any>()
+          when(eventName){
+              webviewNameBridgeCalled -> {
+                  eventType = webviewEventType
+                  map[eventSubType] = webviewSubType
+                  map[bridgeNameKey] = bridgeName
+                  map[pageTypeKey] = pageType
+                  map[pageTitleKey] = pageTitle
+                  map[pageURLKey] = pageURL
+                  map[requestUUIDKey] = requestUUID
+              }
+              webviewNameBridgeCompleted -> {
+                  eventType = webviewEventType
+                  map[eventSubType] = webviewSubType
+                  map[bridgeNameKey] = bridgeName
+                  map[pageTypeKey] = pageType
+                  map[pageTitleKey] = pageTitle
+                  map[pageURLKey] = pageURL
+                  map[requestUUIDKey] = requestUUID
+                  map[timeSinceStartKey] = timeSinceStart
+              }
+              webviewNameBridgeNotFound,webviewNameBridgePassedToNative -> {
+                  eventType = webviewEventType
+                  map[eventSubType] = webviewSubType
+                  map[bridgeNameKey] = bridgeName
+                  map[pageTypeKey] = pageType
+                  map[pageTitleKey] = pageTitle
+                  map[pageURLKey] = pageURL
+              }
+              webviewNameBridgeFailedToDecode -> {
+                  eventType = webviewEventType
+                  map[eventSubType] = webviewSubType
+                  map[pageTypeKey] = pageType
+                  map[pageTitleKey] = pageTitle
+                  map[pageURLKey] = pageURL
+                  map[errorKey] = error
+              }
+              imageScannerInitialized,imageScannerCancelled,imageScannerDetectedObjects -> {
+                  eventType = mvmNativeModuleHandling
+                  map[eventSubType] = imageScanningSubType
+                  map[requestUUIDKey] = requestUUID
+                  map[kindsKey] = kinds
+                  map[moduleNameKey] = moduleName
+              }
+              appReviewSuppressed ->{
+                  eventType = mvmCoreType
+                  map[eventSubType] = reviewAppSubTpe
+                  map[reasonKey] = reason
+                  map[webPageURLKey] = pageURL
+                  map[daysSinceLastShownKey] = daysSinceLastShown
+              }
+              appReviewPopupShown ->{
+                  eventType = mvmCoreType
+                  map[webPageURLKey] = pageURL
+                  map[eventSubType] = imageScanningSubType
+                  map[daysSinceLastShownKey] = daysSinceLastShown
+              }
+              appReviewUserOptedNotNow ->{
+                  eventType = mvmCoreType
+                  map[eventSubType] = imageScanningSubType
+                  map[webPageURLKey] = pageURL
+              }
+              appReviewUserOptedToReview ->{
+                  eventType = mvmCoreType
+                  map[eventSubType] = imageScanningSubType
+                  map[userSelectionKey] = userSelection
+                  map[webPageURLKey] = pageURL
+              }
+              inAppReviewRequested ->{
+                  eventType = mvmCoreType
+                  map[eventSubType] = imageScanningSubType
+                  map[wasSuccessfulKey] = wasSuccessful
+              }
+              fidoAuthInvoked ->{
+                  eventType = authenticationEventType
+                  map[eventSubType] = authenticationSubTpe
+                  map[fidoGuidKey] = fidoGuid
+                  map[errorCodeKey] = fidoErrorCode
+              }
+
+              
+          }
+         eventType?.let {
+             analyticsUtil?.recordCustomEvent(it,eventName, map as Map<String, Any>?)
+         }
+     }
