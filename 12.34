@@ -1,0 +1,24 @@
+    private open inner class ChromeWebViewClient : WebChromeClient() {
+
+        private var mCustomView: View? = null
+        private var mCustomViewCallback: CustomViewCallback? = null
+
+        private var mOriginalSystemUiVisibility: Int = 0
+
+        override fun onProgressChanged(view: WebView, newProgress: Int) {
+            progress_line!!.progress = newProgress
+            if (newProgress == 100) {
+                if(StringUtils.isNotEmpty(view.url)) {
+                    Uri.parse(view.url).apply {
+                        newReclicLogUrl = "${this.scheme}://${this.host}${this.path}"
+                        NewRelicEvents(MFAppContext.getInstance().sessionId,pageType= this@WebViewOpenURLInAppWebPunchOutFragment.pageType, pageURL = this@WebViewOpenURLInAppWebPunchOutFragment.newReclicLogUrl ?: "").apply {
+                            addEvent(userJourney)
+                        }
+
+                    }
+                }
+                progress_line!!.visibility = View.GONE
+            }
+        }
+
+
