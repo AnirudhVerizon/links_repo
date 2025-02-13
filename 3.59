@@ -1,0 +1,161 @@
+class SearchUtil {
+
+    companion object {
+fun startSpeechRecognition(
+            context: Context?,
+            sharedPreferencesUtil: SharedPreferencesUtil?,
+            executeAction: (spokenText: String) -> Unit
+        ) {
+            context?.let { ctx ->
+                val dialog = Dialog(ctx)
+                dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+                dialog.setContentView(R.layout.dialog_custom_mic)
+                val window = dialog.window
+                window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                window?.setGravity(Gravity.BOTTOM)
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+                val micImageView: ImageView = dialog.findViewById(R.id.imgMicIcon)
+                val promptTextView: TextView = dialog.findViewById(R.id.tvPrompt)
+                val spokenTextView: TextView = dialog.findViewById(R.id.tvSpokenText)
+                val btnProceed: ButtonView = dialog.findViewById(R.id.btnProceed)
+                val btnTryAgain: ButtonView = dialog.findViewById(R.id.btnTryAgain)
+
+//                val btnProceed = rootView.findViewById<RoundRectButton>(R.id.btn_right)
+//                val btnTryAgain = rootView.findViewById<RoundRectButton>(R.id.btn_left)
+
+
+
+
+                btnTryAgain.visibility= View.GONE
+                btnProceed.visibility= View.GONE
+
+                dialog.show()
+
+                val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(ctx)
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Speak now")
+                }
+
+                var recognizedText: String? = null
+
+                dialog.setOnDismissListener {
+                    speechRecognizer.stopListening()
+                }
+
+                speechRecognizer.setRecognitionListener(object : RecognitionListener {
+                    override fun onReadyForSpeech(params: Bundle?) {
+                        // Ready to receive speech
+                    }
+
+                    override fun onBeginningOfSpeech() {
+                        // User has started speaking
+                    }
+
+                    override fun onRmsChanged(rmsdB: Float) {
+                        // Sound level changed
+                    }
+
+                    override fun onBufferReceived(buffer: ByteArray?) {
+                        // Buffer received
+                    }
+
+                    override fun onEndOfSpeech() {
+                        // User has finished speaking
+                    }
+
+                    override fun onError(error: Int) {
+                        // Handle error and dismiss the dialog
+                        dialog.dismiss()
+                    }
+
+                    override fun onResults(results: Bundle?) {
+                        results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.let { result ->
+                            recognizedText = result[0]
+                            spokenTextView.visibility = View.VISIBLE
+                            spokenTextView.text = recognizedText
+                            promptTextView.visibility= View.GONE
+                            micImageView.visibility = View.VISIBLE
+
+                            btnTryAgain.visibility= View.VISIBLE
+                            btnProceed.visibility= View.VISIBLE
+
+
+
+                            // Enable the buttons now that we have results
+                            btnProceed.isEnabled = true
+                            btnTryAgain.isEnabled = true
+                        }
+                    }
+
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        // Handle partial results
+                    }
+
+                    override fun onEvent(eventType: Int, params: Bundle?) {
+                        // Handle events
+                    }
+                })
+
+                // Start listening when the dialog is shown
+                speechRecognizer.startListening(intent)
+
+                // Handle "Proceed" button click
+                btnProceed.setOnClickListener {
+                    recognizedText?.let { spokenText ->
+//                        saveRecentSearches(sharedPreferencesUtil,spokenText)
+//                        HABContentMoleculeView.performDoneApiCall(spokenText)
+                        executeAction(spokenText)
+                    }
+
+                    dialog.dismiss()
+                }
+
+
+                // Handle "Try Again" button click
+                btnTryAgain.setOnClickListener {
+                    recognizedText = null
+                    spokenTextView.visibility = View.GONE
+                    micImageView.visibility = View.VISIBLE
+                    promptTextView.visibility= View.VISIBLE
+
+                    btnTryAgain.visibility= View.GONE
+                    btnProceed.visibility= View.GONE
+
+                    // Restart listening
+                    speechRecognizer.startListening(intent)
+                }
+
+                // Initially disable the buttons until speech is recognized
+                btnProceed.isEnabled = false
+                btnTryAgain.isEnabled = false
+            }
+        }
+    }
+
+HABContentMoleculeView.kt
+    private fun performDoneApiCall(query: String) {
+        iv_assistant?.visibility = View.VISIBLE
+        iv_voice_input?.visibility = View.GONE
+        searchResultsView?.hideKeyboard()
+        clearSearchFocus()
+        globalSearchViewPresenter?.stopSearchRequest()
+        searchJob?.cancel()
+        scope.cancel()
+        onSearchListener?.hideSearchList(true)
+        onSearchListener?.showOrHideOverlay(false, globalSearchListTemplateModel)
+        isSearchActive = false
+
+
+        val requestParams = mapOf(
+            "searchInput" to query,
+            "searchPageType" to (initializeActivity()?.currentFragment?.pageType ?: "")
+        )
+        searchDoneAction?.let {
+            val action = convertToAction(it)
+            SearchUtil.saveRecentSearchWithSearchDone(sharedPreferencesUtil, query, action)
+            globalSearchViewPresenter?.executeSearchDoneAction(action, requestParams)
+        }
+    }
