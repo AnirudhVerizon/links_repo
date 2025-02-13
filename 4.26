@@ -1,0 +1,7 @@
+        iv_voice_input?.setOnClickListener {
+            SearchUtil.startSpeechRecognition(this.context, sharedPreferencesUtil) { inputText ->
+                SearchUtil.startSpeechRecognition(context,sharedPreferencesUtil,::performDoneApiCall)
+
+            }
+//            (context as? OnSearchChangeListener)?.showVoiceInput()
+        }
