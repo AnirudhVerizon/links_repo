@@ -1,0 +1,191 @@
+data class NewRelicEvents(
+    var bridgeName: String = "",
+    var pageType: String = "",
+    var pageTitle: String = "",
+    var pageURL: String = "",
+    var requestUUID: String = "",
+    var kinds: String = "",
+    var moduleName: String = "",
+    var error: String = "",
+    var fidoGuid: String = "",
+    var fidoErrorCode: String = "",
+    var eventName: String = "",
+    var timeSinceStart: Long = 0L,
+    var reason: String = "",
+    var daysSinceLastShown: Long = 0,
+    var userSelection: String = "",
+    var wasSuccessful: Boolean = false,
+    var modelName: String = "",
+    var previousPageType: String = "",
+
+
+    var e2eId: String = "",
+    var serverProcessTime: String = "",
+    var downloadTime: String = "",
+    var responseTime: Float = 0f,
+    var uiRenderTime: Float = 0f,
+    var nativeLoadTime: Float = 0f,
+    var webpageLoadTime: Float = 0f,
+    var totalLoadTime: Float = 0f,
+    var parsingTimeValue: String = "",
+    var netWorkInfoValue: String = "",
+    var interactionName: String = "",
+    var recordedTimestamp: Long = 0L,
+    var actionPageType: String = "",
+    var timeSinceStartInSec: String = "",
+) {
+
+    val mvmNativeModuleHandling = "MVMNativeModuleHandling"
+    val imageScannerInitialized = "imageScannerInitialized"
+    val imageScannerCancelled = "imageScannerCancelled"
+    val imageScannerDetectedObjects = "imageScannerDetectedObjects"
+    val imageScanningSubType = "imageScanning"
+
+    //App review
+    val appReviewSuppressed = "appReviewSuppressed"
+    val appReviewPopupShown = "appReviewPopupShown"
+    val appReviewUserOptedNotNow = "appReviewUserOptedNotNow"
+    val appReviewUserOptedToReview = "appReviewUserOptedToReview"
+    val inAppReviewRequested = "inAppReviewRequested"
+    val reviewAppSubTpe = "reviewApp"
+
+    //  Webview bridge eventtypes
+    val webviewEventType = "MVMWebview"
+    val webviewSubType = "webBridge"
+    val webviewNameBridgeCalled = "webviewBridgeCalled"
+    val webviewNameBridgeCompleted = "webviewBridgeComplete"
+    val webviewNameBridgeNotFound = "webviewBridgeNotFound"
+    val webviewNameBridgeFailedToDecode = "webviewBridgeFailedToDecode"
+    val webviewNameBridgePassedToNative = "webviewBridgePassedToNative"
+
+    //authentication
+    val authenticationEventType = "MVMBiometrics"
+    val authenticationSubTpe = "biometricsAuth"
+    val fidoAuthInvoked = "fidoAuthInvoked"
+    val fidoAuthCancelled = "fidoAuthCancelled"
+    val fidoAuthReset = "fidoAuthReset"
+    val fidoAuthFailure = "fidoAuthFailure"
+    val fidoAuthSuccess = "fidoAuthSuccess"
+
+    //registration
+    val registrationEventType = "MVMBiometrics"
+    val registrationSubTpe = "biometricsRegistration"
+    val fidoRegistrationInvoked = "fidoRegistrationInvoked"
+    val fidoRegistrationCancelled = "fidoRegistrationCancelled"
+    val fidoRegistrationFailed = "fidoRegistrationFailed"
+    val fidoRegistrationSuccess = "fidoRegistrationSuccess"
+
+    //Action
+    val actionEventType = "MVMCore"
+    val actionSubTpe = "action"
+    val actionFailedToDecode = "actionFailedToDecode"
+    val actionNotFound = "actionNotFound"
+    val actionInvoked = "actionInvoked"
+    val actionFailed = "actionFailed"
+    val actionComplete = "actionComplete"
+
+
+    val actionNoNetworkSubType = "noNetwork"
+    val actionFailedNoNetwrok = "actionFailedNoNetwrok"
+
+    // new relic params
+    val bridgeNameKey = "bridgeName"
+    val eventSubType = "subtype"
+    val pageTypeKey = "pageType"
+    val pageTitleKey = "pageTitle"
+    val pageURLKey = "pageURL"
+    val requestUUIDKey = "requestUUID"
+    val kindsKey = "kinds"
+    val moduleNameKey = "moduleName"
+    val errorKey = "error"
+    val timeSinceStartKey ="timeSinceStart"
+    val fidoGuidKey = "fidoGuid"
+    val errorCodeKey = "errorCode"
+    val reasonKey = "reason"
+    val daysSinceLastShownKey = "daysSinceLastShown"
+    val userSelectionKey = "userSelection"
+    val wasSuccessfulKey = "wasSuccessful"
+    val previousPageTypeKey = "previousPageType"
+
+    val mvaPageLoadTimeType = "PageLoadTime"
+    val mvmCoreType = "MVMCore"
+    val mvmCorePageStarted = "pageStarted"
+    val mvmCorePageLoadStarted = "pageLoadStarted"
+    val mvmCorePageLoadComplete = "pageLoadComplete"
+    val mvmCorePageProcessingComplete = "pageProcessingComplete"
+    val mvmCorePageRenderComplete = "pageRenderComplete"
+    val mvmCorePageLoadSummary = "pageLoadSummary"
+
+    val requestURLKey = "requestURL"
+    val serverProcessingTimeKey = "serverProcessingTime"
+    val interactionNameKey = "interactionName"
+
+    val recordedTimestampKey = "recordedTimestamp"
+    val actionPageTypeKey = "actionPageType"
+    val requestTimeStampKey = "requestTimeStamp"
+    val responeTimeStampKey = "responseTimeStamp"
+    val webPageURLKey = "webPageURL"
+    val pageVisibleTimeStampKey = "pageVisibleTimeStamp"
+    val responseTimeKey = "responseTime"
+    val uiRenderTimeKey = "uiRenderTime"
+    val nativeLoadTimeKey = "nativeLoadTime"
+    val webpageLoadTimeKey = "webpageLoadTime"
+    val totalLoadTimeKey = "totalLoadTime"
+
+    val userJourney = "userJourney"
+    val UserJourneyEvent="userJourneyEvent"
+
+
+     @Inject
+     @JvmField
+     var analyticsUtil: AnalyticsReporter?=null
+
+     init {
+         MobileFirstApplication.getObjectGraph(MobileFirstApplication.getAppContext().applicationContext).inject(this)
+     }
+
+      fun addEvent(eventName:String){
+         var eventType : String ?= null
+         val map = hashMapOf<String,Any>()
+          when(eventName){
+
+              userJourney ->{
+                  eventType= UserJourneyEvent
+                  map[pageURLKey]= pageURL
+                  map[pageTypeKey]= pageType
+              }
+
+    private open inner class ChromeWebViewClient : WebChromeClient() {
+
+        private var mCustomView: View? = null
+        private var mCustomViewCallback: CustomViewCallback? = null
+
+        private var mOriginalSystemUiVisibility: Int = 0
+
+        override fun onProgressChanged(view: WebView, newProgress: Int) {
+            progress_line!!.progress = newProgress
+            if (newProgress == 100) {
+                if(StringUtils.isNotEmpty(view.url)) {
+                    Uri.parse(view.url).apply {
+                        newReclicLogUrl = "${this.scheme}://${this.host}${this.path}"
+                    }
+                }
+                progress_line!!.visibility = View.GONE
+            }
+        }
+
+    public void setFirebaseInitModel(FirebaseInitModel firebaseInitModel) {
+        this.firebaseInitModel = firebaseInitModel;
+        Log.d("FirebaseInitModel", firebaseInitModel.getFirebaseModelParams().toString());
+    }
+
+    protected void replaceFragment(ResponseHandlingEvent event) {
+        executeCommand(new ReplaceFragmentCommand(event, eventBus, log));
+//        Timber.tag("webviewURL").d(event.getBaseResponse().getPageType());
+        Log.d("webviewURL", event.getBaseResponse().getPageType());
+    }
+
+
+
+
+
